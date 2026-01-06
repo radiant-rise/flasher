@@ -7,7 +7,13 @@ import {
 } from "esptool-js";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { serial } from "web-serial-polyfill";
-import tDisplays3releases from "./firmwares/dashboard-lilygo-t-displays3-releases.json";
+import releasesData from "./firmwares/releases.json";
+
+type ReleasesData = Record<string, string[]>;
+
+const releases = Object.entries(releasesData as ReleasesData).flatMap(([target, versions]) =>
+	versions.slice(0, 5).map((version) => ({ target, version, label: `${target}-${version}` }))
+);
 
 const serialLib =
 	!navigator.serial && (navigator as any).usb ? serial : navigator.serial;
@@ -37,11 +43,12 @@ function useSerialConnection(baudrate: string) {
 		await writerRef.current?.close();
 		writerRef.current = null;
 		await portRef.current?.close();
-		portRef.current = null;
 	};
 
 	const setupNativeSerial = async () => {
-		portRef.current = await serialLib?.requestPort({});
+		if (!portRef.current) {
+			portRef.current = await serialLib?.requestPort({});
+		}
 		await portRef.current.open({ baudRate: parseInt(baudrateRef.current) });
 		writerRef.current = portRef.current.writable.getWriter();
 		readerRef.current = portRef.current.readable.getReader();
@@ -79,6 +86,7 @@ function useSerialConnection(baudrate: string) {
 	const disconnect = async () => {
 		await closeNativeSerial();
 		await cleanupESPTool();
+		portRef.current = null;
 		setIsConnected(false);
 		setChip(null);
 	};
@@ -166,7 +174,7 @@ function useFlashOperations(serial: ReturnType<typeof useSerialConnection>) {
 		try {
 			await withESPTool(async () => {
 				await serial.espLoaderRef.current!.writeFlash({
-					fileArray: [{ data: fileData, address: 0x10000 }],
+					fileArray: [{ data: fileData, address: 0x0 }],
 					flashSize: "keep",
 					flashMode: "keep",
 					flashFreq: "keep",
@@ -227,29 +235,37 @@ function usePreferences(serial: ReturnType<typeof useSerialConnection>) {
 }
 
 function useFirmwareLoader() {
-	const [selectedVersion, setSelectedVersion] = useState("");
+	const [selectedLabel, setSelectedLabel] = useState("");
 	const [firmwareData, setFirmwareData] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const selectVersion = async (version: string) => {
-		setSelectedVersion(version);
+	const selectFirmware = async (label: string) => {
+		setSelectedLabel(label);
 		setFirmwareData(null);
-		if (!version) return;
+		if (!label) return;
+
+		const release = releases.find((r) => r.label === label);
+		if (!release) return;
 
 		setIsLoading(true);
 		try {
-			const response = await fetch(`./firmwares/${version}/dashboard-lilygo-t-displays3.bin`);
+			const response = await fetch(`./firmwares/${release.target}/${release.version}/image-merged.bin`);
 			if (!response.ok) {
 				throw new Error(`Failed to load firmware: ${response.status} ${response.statusText}`);
 			}
 			const bytes = new Uint8Array(await response.arrayBuffer());
-			setFirmwareData(String.fromCharCode(...bytes));
+			let binary = '';
+			const chunkSize = 8192;
+			for (let i = 0; i < bytes.length; i += chunkSize) {
+				binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+			}
+			setFirmwareData(binary);
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
-	return { selectedVersion, firmwareData, isLoading, selectVersion };
+	return { selectedLabel, firmwareData, isLoading, selectFirmware };
 }
 
 export function App() {
@@ -319,13 +335,13 @@ export function App() {
 					<div>
 						<label>Firmware Version: </label>
 						<select
-							value={firmware.selectedVersion}
-							onChange={(e) => runAsync(() => firmware.selectVersion((e.target as HTMLSelectElement).value), "Failed to load firmware")}
+							value={firmware.selectedLabel}
+							onChange={(e) => runAsync(() => firmware.selectFirmware((e.target as HTMLSelectElement).value), "Failed to load firmware")}
 							disabled={firmware.isLoading}
 						>
 							<option value="">Select firmware version...</option>
-							{tDisplays3releases.map((r) => (
-								<option key={r.version} value={r.version}>{r.version}</option>
+							{releases.map((r) => (
+								<option key={r.label} value={r.label}>{r.label}</option>
 							))}
 						</select>
 						{firmware.isLoading && <span> Loading firmware...</span>}
