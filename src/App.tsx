@@ -168,13 +168,13 @@ function useFlashOperations(serial: ReturnType<typeof useSerialConnection>) {
 		}
 	};
 
-	const programFlash = async (fileData: string) => {
+	const programFlash = async (fileData: string, address: number) => {
 		setIsProgramming(true);
 		setProgress(0);
 		try {
 			await withESPTool(async () => {
 				await serial.espLoaderRef.current!.writeFlash({
-					fileArray: [{ data: fileData, address: 0x0 }],
+					fileArray: [{ data: fileData, address }],
 					flashSize: "keep",
 					flashMode: "keep",
 					flashFreq: "keep",
@@ -234,22 +234,25 @@ function usePreferences(serial: ReturnType<typeof useSerialConnection>) {
 	return { preferences, setPreferences, isLoading, isUpdating, getAllSettings, updateAllSettings };
 }
 
+type FlashType = "fw" | "full";
+
 function useFirmwareLoader() {
 	const [selectedLabel, setSelectedLabel] = useState("");
 	const [firmwareData, setFirmwareData] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [flashType, setFlashType] = useState<FlashType>("fw");
 
-	const selectFirmware = async (label: string) => {
-		setSelectedLabel(label);
+	const loadFirmware = async (label: string, type: FlashType) => {
 		setFirmwareData(null);
 		if (!label) return;
 
 		const release = releases.find((r) => r.label === label);
 		if (!release) return;
 
+		const fileName = type === "fw" ? "image.bin" : "image-merged.bin";
 		setIsLoading(true);
 		try {
-			const response = await fetch(`./firmwares/${release.target}/${release.version}/image-merged.bin`);
+			const response = await fetch(`./firmwares/${release.target}/${release.version}/${fileName}`);
 			if (!response.ok) {
 				throw new Error(`Failed to load firmware: ${response.status} ${response.statusText}`);
 			}
@@ -265,7 +268,21 @@ function useFirmwareLoader() {
 		}
 	};
 
-	return { selectedLabel, firmwareData, isLoading, selectFirmware };
+	const selectFirmware = async (label: string) => {
+		setSelectedLabel(label);
+		await loadFirmware(label, flashType);
+	};
+
+	const changeFlashType = async (type: FlashType) => {
+		setFlashType(type);
+		if (selectedLabel) {
+			await loadFirmware(selectedLabel, type);
+		}
+	};
+
+	const flashAddress = flashType === "fw" ? 0x10000 : 0x0;
+
+	return { selectedLabel, firmwareData, isLoading, selectFirmware, flashType, changeFlashType, flashAddress };
 }
 
 export function App() {
@@ -314,10 +331,10 @@ export function App() {
 			) : (
 				<div>
 					<p>Connected to: {serial.chip}</p>
-					<button onClick={() => runAsync(async () => { await serial.disconnect(); prefs.setPreferences(""); }, "Disconnect failed")}>
+					<button onClick={() => runAsync(async () => { await serial.disconnect(); prefs.setPreferences(""); }, "Disconnect failed")} disabled={flash.isErasing || flash.isProgramming}>
 						Disconnect
 					</button>
-					<button onClick={() => runAsync(() => flash.eraseFlash(), "Erase failed")} disabled={flash.isErasing}>
+					<button onClick={() => runAsync(() => flash.eraseFlash(), "Erase failed")} disabled={flash.isErasing || flash.isProgramming}>
 						{flash.isErasing ? "Erasing..." : "Erase Flash"}
 					</button>
 				</div>
@@ -344,6 +361,29 @@ export function App() {
 								<option key={r.label} value={r.label}>{r.label}</option>
 							))}
 						</select>
+						{" "}
+						<label>
+							<input
+								type="radio"
+								name="flashType"
+								value="fw"
+								checked={firmware.flashType === "fw"}
+								onChange={() => runAsync(() => firmware.changeFlashType("fw"), "Failed to load firmware")}
+								disabled={firmware.isLoading}
+							/>
+							Only FW
+						</label>
+						<label>
+							<input
+								type="radio"
+								name="flashType"
+								value="full"
+								checked={firmware.flashType === "full"}
+								onChange={() => runAsync(() => firmware.changeFlashType("full"), "Failed to load firmware")}
+								disabled={firmware.isLoading}
+							/>
+							Full
+						</label>
 						{firmware.isLoading && <span> Loading firmware...</span>}
 						{firmware.firmwareData && <span> ✓ Firmware loaded</span>}
 					</div>
@@ -361,7 +401,7 @@ export function App() {
 								setAlert("No firmware loaded! Please select a version first.");
 								return;
 							}
-							runAsync(() => flash.programFlash(firmware.firmwareData!), "Programming failed", "Programming completed successfully!");
+							runAsync(() => flash.programFlash(firmware.firmwareData!, firmware.flashAddress), "Programming failed", "Programming completed successfully!");
 						}}
 						disabled={flash.isProgramming || !firmware.firmwareData || firmware.isLoading}
 					>
