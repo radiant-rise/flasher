@@ -10,13 +10,19 @@ import { serial } from "web-serial-polyfill";
 import releasesData from "./firmwares/releases.json";
 
 type ReleasesData = Record<string, string[]>;
+type FlashType = "fw" | "full";
 
-const releases = Object.entries(releasesData as ReleasesData).flatMap(([target, versions]) =>
-	versions.slice(0, 5).map((version) => ({ target, version, label: `${target}-${version}` }))
+const releases = Object.entries(releasesData as ReleasesData).flatMap(
+	([target, versions]) =>
+		versions
+			.slice(0, 5)
+			.map((version) => ({ target, version, label: `${target}-${version}` })),
 );
 
 const serialLib =
-	!navigator.serial && (navigator as any).usb ? serial : navigator.serial;
+	!navigator.serial && (navigator as { usb?: unknown }).usb
+		? serial
+		: navigator.serial;
 
 const terminal = {
 	clean() {},
@@ -24,53 +30,85 @@ const terminal = {
 	write: console.log,
 };
 
+const COMMAND_TIMEOUT_MS = 2000;
+const POST_FLASH_DELAY_MS = 1000;
+const POST_PROGRAM_DELAY_MS = 2000;
+
+function arrayBufferToBinaryString(buffer: ArrayBuffer): string {
+	const bytes = new Uint8Array(buffer);
+	const chunks: string[] = [];
+	const chunkSize = 8192;
+	for (let i = 0; i < bytes.length; i += chunkSize) {
+		chunks.push(String.fromCharCode(...bytes.subarray(i, i + chunkSize)));
+	}
+	return chunks.join("");
+}
+
 function useSerialConnection(baudrate: string) {
 	const [isConnected, setIsConnected] = useState(false);
 	const [chip, setChip] = useState<string | null>(null);
 
 	const transportRef = useRef<Transport | null>(null);
 	const espLoaderRef = useRef<ESPLoader | null>(null);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const portRef = useRef<any>(null);
 	const writerRef = useRef<WritableStreamDefaultWriter | null>(null);
-	const readerRef = useRef<ReadableStreamDefaultReader | null>(null);
+	const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(
+		null,
+	);
 	const baudrateRef = useRef(baudrate);
 	baudrateRef.current = baudrate;
 
 	const closeNativeSerial = async () => {
-		await readerRef.current?.cancel();
-		readerRef.current?.releaseLock();
+		try {
+			await readerRef.current?.cancel();
+		} catch {}
+		try {
+			readerRef.current?.releaseLock();
+		} catch {}
 		readerRef.current = null;
-		await writerRef.current?.close();
+
+		try {
+			await writerRef.current?.close();
+		} catch {}
 		writerRef.current = null;
-		await portRef.current?.close();
+
+		try {
+			await portRef.current?.close();
+		} catch {}
 	};
 
 	const setupNativeSerial = async () => {
 		if (!portRef.current) {
-			portRef.current = await serialLib?.requestPort({});
+			portRef.current = (await serialLib?.requestPort({})) ?? null;
 		}
-		await portRef.current.open({ baudRate: parseInt(baudrateRef.current) });
-		writerRef.current = portRef.current.writable.getWriter();
-		readerRef.current = portRef.current.readable.getReader();
+		if (!portRef.current) {
+			throw new Error("No serial port available");
+		}
+		await portRef.current.open({ baudRate: Number(baudrateRef.current) });
+		writerRef.current = portRef.current.writable!.getWriter();
+		readerRef.current = portRef.current.readable!.getReader();
 		setChip("Native Connection");
 	};
 
 	const cleanupESPTool = async () => {
-		await transportRef.current?.disconnect();
+		try {
+			await transportRef.current?.disconnect();
+		} catch {}
 		transportRef.current = null;
 		espLoaderRef.current = null;
 	};
 
-	const setupESPTool = async () => {
+	const setupESPTool = async (): Promise<string> => {
 		if (!portRef.current) throw new Error("No device available");
 
 		transportRef.current = new Transport(portRef.current, true);
 		espLoaderRef.current = new ESPLoader({
 			transport: transportRef.current,
-			baudrate: parseInt(baudrateRef.current),
+			baudrate: Number(baudrateRef.current),
 			terminal,
 			debugLogging: false,
-			romBaudrate: parseInt(baudrateRef.current),
+			romBaudrate: Number(baudrateRef.current),
 		} as LoaderOptions);
 
 		const detectedChip = await espLoaderRef.current.main();
@@ -100,18 +138,21 @@ function useSerialConnection(baudrate: string) {
 
 		let response = "";
 		const decoder = new TextDecoder();
-		const deadline = Date.now() + 2000;
+		const deadline = Date.now() + COMMAND_TIMEOUT_MS;
 
 		while (Date.now() < deadline) {
-			try {
-				const result = await readerRef.current.read();
-				if (result.value?.length) {
-					response += decoder.decode(result.value);
-					if (response.includes("END") || response.includes("ERROR")) break;
-				}
-				if (result.done) break;
-			} catch {
-				await new Promise((r) => setTimeout(r, 100));
+			const result = await Promise.race([
+				readerRef.current.read(),
+				new Promise<null>((resolve) =>
+					setTimeout(() => resolve(null), deadline - Date.now()),
+				),
+			]);
+
+			if (result === null) break;
+			if (result.done) break;
+			if (result.value?.length) {
+				response += decoder.decode(result.value, { stream: true });
+				if (response.includes("END") || response.includes("ERROR")) break;
 			}
 		}
 
@@ -147,11 +188,16 @@ function useFlashOperations(serial: ReturnType<typeof useSerialConnection>) {
 	const [isProgramming, setIsProgramming] = useState(false);
 	const [progress, setProgress] = useState(0);
 
-	const withESPTool = async <T,>(fn: () => Promise<T>, delay = 1000): Promise<T> => {
+	const withESPTool = async <T,>(
+		fn: (loader: ESPLoader) => Promise<T>,
+		delay = POST_FLASH_DELAY_MS,
+	): Promise<T> => {
 		await serial.closeNativeSerial();
 		await serial.setupESPTool();
+		const loader = serial.espLoaderRef.current;
+		if (!loader) throw new Error("ESP loader not initialized");
 		try {
-			return await fn();
+			return await fn(loader);
 		} finally {
 			await serial.cleanupESPTool();
 			await new Promise((r) => setTimeout(r, delay));
@@ -162,7 +208,7 @@ function useFlashOperations(serial: ReturnType<typeof useSerialConnection>) {
 	const eraseFlash = async () => {
 		setIsErasing(true);
 		try {
-			await withESPTool(() => serial.espLoaderRef.current!.eraseFlash());
+			await withESPTool((loader) => loader.eraseFlash());
 		} finally {
 			setIsErasing(false);
 		}
@@ -172,22 +218,22 @@ function useFlashOperations(serial: ReturnType<typeof useSerialConnection>) {
 		setIsProgramming(true);
 		setProgress(0);
 		try {
-			await withESPTool(async () => {
-				await serial.espLoaderRef.current!.writeFlash({
+			await withESPTool(async (loader) => {
+				await loader.writeFlash({
 					fileArray: [{ data: fileData, address }],
 					flashSize: "keep",
 					flashMode: "keep",
 					flashFreq: "keep",
 					eraseAll: false,
 					compress: true,
-					reportProgress: (_: number, written: number, total: number) => {
+					reportProgress: (_, written, total) => {
 						setProgress((written / total) * 100);
 					},
-					calculateMD5Hash: (image: string) =>
+					calculateMD5Hash: (image) =>
 						CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)).toString(),
 				} as FlashOptions);
-				await serial.espLoaderRef.current!.after("hard_reset");
-			}, 2000);
+				await loader.after("hard_reset");
+			}, POST_PROGRAM_DELAY_MS);
 		} finally {
 			setIsProgramming(false);
 			setProgress(0);
@@ -205,7 +251,22 @@ function usePreferences(serial: ReturnType<typeof useSerialConnection>) {
 	const getAllSettings = async () => {
 		setIsLoading(true);
 		try {
-			const response = await serial.sendCommand("GET_ALL_PREFS");
+			const response = await serial.sendCommand("GET_PREFS");
+			if (!response) throw new Error("No response received from device");
+			try {
+				setPreferences(JSON.stringify(JSON.parse(response), null, 2));
+			} catch {
+				setPreferences(response);
+			}
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const getAllSettingsKeys = async () => {
+		setIsLoading(true);
+		try {
+			const response = await serial.sendCommand("GET_PREF_KEYS");
 			if (!response) throw new Error("No response received from device");
 			try {
 				setPreferences(JSON.stringify(JSON.parse(response), null, 2));
@@ -218,11 +279,20 @@ function usePreferences(serial: ReturnType<typeof useSerialConnection>) {
 	};
 
 	const updateAllSettings = async () => {
-		if (!preferences.trim()) throw new Error("No preferences data!");
+		const trimmed = preferences.trim();
+		if (!trimmed) throw new Error("No preferences data!");
+
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(trimmed);
+		} catch {
+			throw new Error("Invalid JSON format");
+		}
+
 		setIsUpdating(true);
 		try {
 			const response = await serial.sendCommand(
-				`SET_ALL_PREFS:${JSON.stringify(JSON.parse(preferences))}`,
+				`SET_PREFS:${JSON.stringify(parsed)}`,
 			);
 			if (response.includes("ERROR")) throw new Error(`Update failed: ${response}`);
 			return `Response: ${response}`;
@@ -231,10 +301,16 @@ function usePreferences(serial: ReturnType<typeof useSerialConnection>) {
 		}
 	};
 
-	return { preferences, setPreferences, isLoading, isUpdating, getAllSettings, updateAllSettings };
+	return {
+		preferences,
+		setPreferences,
+		isLoading,
+		isUpdating,
+		getAllSettings,
+		getAllSettingsKeys,
+		updateAllSettings,
+	};
 }
-
-type FlashType = "fw" | "full";
 
 function useFirmwareLoader() {
 	const [selectedLabel, setSelectedLabel] = useState("");
@@ -252,16 +328,15 @@ function useFirmwareLoader() {
 		const fileName = type === "fw" ? "image.bin" : "image-merged.bin";
 		setIsLoading(true);
 		try {
-			const response = await fetch(`./firmwares/${release.target}/${release.version}/${fileName}`);
+			const response = await fetch(
+				`./firmwares/${release.target}/${release.version}/${fileName}`,
+			);
 			if (!response.ok) {
-				throw new Error(`Failed to load firmware: ${response.status} ${response.statusText}`);
+				throw new Error(
+					`Failed to load firmware: ${response.status} ${response.statusText}`,
+				);
 			}
-			const bytes = new Uint8Array(await response.arrayBuffer());
-			let binary = '';
-			const chunkSize = 8192;
-			for (let i = 0; i < bytes.length; i += chunkSize) {
-				binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-			}
+			const binary = arrayBufferToBinaryString(await response.arrayBuffer());
 			setFirmwareData(binary);
 		} finally {
 			setIsLoading(false);
@@ -274,6 +349,7 @@ function useFirmwareLoader() {
 	};
 
 	const changeFlashType = async (type: FlashType) => {
+		if (type === flashType) return;
 		setFlashType(type);
 		if (selectedLabel) {
 			await loadFirmware(selectedLabel, type);
@@ -282,7 +358,20 @@ function useFirmwareLoader() {
 
 	const flashAddress = flashType === "fw" ? 0x10000 : 0x0;
 
-	return { selectedLabel, firmwareData, isLoading, selectFirmware, flashType, changeFlashType, flashAddress };
+	return {
+		selectedLabel,
+		firmwareData,
+		isLoading,
+		selectFirmware,
+		flashType,
+		changeFlashType,
+		flashAddress,
+	};
+}
+
+function getErrorMessage(e: unknown): string {
+	if (e instanceof Error) return e.message;
+	return String(e);
 }
 
 export function App() {
@@ -294,21 +383,29 @@ export function App() {
 	const prefs = usePreferences(serial);
 	const firmware = useFirmwareLoader();
 
-	const handleError = (e: any, context: string) => {
+	const handleError = (e: unknown, context: string) => {
 		console.error(e);
-		setAlert(e.message?.includes("JSON") ? "Invalid JSON format" : `${context}: ${e.message}`);
+		const message = getErrorMessage(e);
+		setAlert(
+			message.includes("JSON") ? "Invalid JSON format" : `${context}: ${message}`,
+		);
 	};
 
-	const runAsync = async (fn: () => Promise<any>, errorContext: string, successMsg?: string) => {
+	const runAsync = async (
+		fn: () => Promise<unknown>,
+		errorContext: string,
+		successMsg?: string,
+	) => {
 		setAlert("");
 		try {
 			const result = await fn();
-			if (successMsg) setAlert(result ?? successMsg);
-		} catch (e: any) {
+			if (successMsg) setAlert(typeof result === "string" ? result : successMsg);
+		} catch (e) {
 			handleError(e, errorContext);
 		}
 	};
 
+	const isBusy = flash.isErasing || flash.isProgramming;
 	const prefsBusy = prefs.isLoading || prefs.isUpdating;
 
 	return (
@@ -318,7 +415,10 @@ export function App() {
 			{!serial.isConnected ? (
 				<div>
 					<label>Baudrate: </label>
-					<select value={baudrate} onChange={(e) => setBaudrate((e.target as HTMLSelectElement).value)}>
+					<select
+						value={baudrate}
+						onChange={(e) => setBaudrate((e.target as HTMLSelectElement).value)}
+					>
 						<option value="921600">921600</option>
 						<option value="460800">460800</option>
 						<option value="230400">230400</option>
@@ -331,10 +431,21 @@ export function App() {
 			) : (
 				<div>
 					<p>Connected to: {serial.chip}</p>
-					<button onClick={() => runAsync(async () => { await serial.disconnect(); prefs.setPreferences(""); }, "Disconnect failed")} disabled={flash.isErasing || flash.isProgramming}>
+					<button
+						onClick={() =>
+							runAsync(async () => {
+								await serial.disconnect();
+								prefs.setPreferences("");
+							}, "Disconnect failed")
+						}
+						disabled={isBusy}
+					>
 						Disconnect
 					</button>
-					<button onClick={() => runAsync(() => flash.eraseFlash(), "Erase failed")} disabled={flash.isErasing || flash.isProgramming}>
+					<button
+						onClick={() => runAsync(() => flash.eraseFlash(), "Erase failed")}
+						disabled={isBusy}
+					>
 						{flash.isErasing ? "Erasing..." : "Erase Flash"}
 					</button>
 				</div>
@@ -353,22 +464,36 @@ export function App() {
 						<label>Firmware Version: </label>
 						<select
 							value={firmware.selectedLabel}
-							onChange={(e) => runAsync(() => firmware.selectFirmware((e.target as HTMLSelectElement).value), "Failed to load firmware")}
+							onChange={(e) =>
+								runAsync(
+									() =>
+										firmware.selectFirmware(
+											(e.target as HTMLSelectElement).value,
+										),
+									"Failed to load firmware",
+								)
+							}
 							disabled={firmware.isLoading}
 						>
 							<option value="">Select firmware version...</option>
 							{releases.map((r) => (
-								<option key={r.label} value={r.label}>{r.label}</option>
+								<option key={r.label} value={r.label}>
+									{r.label}
+								</option>
 							))}
-						</select>
-						{" "}
+						</select>{" "}
 						<label>
 							<input
 								type="radio"
 								name="flashType"
 								value="fw"
 								checked={firmware.flashType === "fw"}
-								onChange={() => runAsync(() => firmware.changeFlashType("fw"), "Failed to load firmware")}
+								onChange={() =>
+									runAsync(
+										() => firmware.changeFlashType("fw"),
+										"Failed to load firmware",
+									)
+								}
 								disabled={firmware.isLoading}
 							/>
 							Only FW
@@ -379,7 +504,12 @@ export function App() {
 								name="flashType"
 								value="full"
 								checked={firmware.flashType === "full"}
-								onChange={() => runAsync(() => firmware.changeFlashType("full"), "Failed to load firmware")}
+								onChange={() =>
+									runAsync(
+										() => firmware.changeFlashType("full"),
+										"Failed to load firmware",
+									)
+								}
 								disabled={firmware.isLoading}
 							/>
 							Full
@@ -401,7 +531,12 @@ export function App() {
 								setAlert("No firmware loaded! Please select a version first.");
 								return;
 							}
-							runAsync(() => flash.programFlash(firmware.firmwareData!, firmware.flashAddress), "Programming failed", "Programming completed successfully!");
+							runAsync(
+								() =>
+									flash.programFlash(firmware.firmwareData!, firmware.flashAddress),
+								"Programming failed",
+								"Programming completed successfully!",
+							);
 						}}
 						disabled={flash.isProgramming || !firmware.firmwareData || firmware.isLoading}
 					>
@@ -413,25 +548,55 @@ export function App() {
 					<h4>Device Preferences</h4>
 
 					<div>
-						<button onClick={() => runAsync(() => prefs.getAllSettings(), "Error getting settings")} disabled={prefsBusy}>
-							{prefs.isLoading ? "Loading..." : "Get All Settings"}
+						<button
+							onClick={() =>
+								runAsync(() => prefs.getAllSettings(), "Error getting settings")
+							}
+							disabled={prefsBusy}
+						>
+							{prefs.isLoading ? "Loading..." : "Get Settings"}
 						</button>
 
 						<button
-							onClick={() => runAsync(() => prefs.updateAllSettings(), "Error updating settings", "Settings updated")}
+							onClick={() =>
+								runAsync(
+									() => prefs.updateAllSettings(),
+									"Error updating settings",
+									"Settings updated",
+								)
+							}
 							disabled={prefsBusy || !prefs.preferences.trim()}
 						>
-							{prefs.isUpdating ? "Updating..." : "Update All Settings"}
+							{prefs.isUpdating ? "Updating..." : "Update Settings"}
 						</button>
 
-						<button onClick={() => runAsync(async () => prefs.setPreferences(await serial.sendCommand("PING")), "PING failed")} disabled={prefsBusy}>
+						<button
+							onClick={() =>
+								runAsync(() => prefs.getAllSettingsKeys(), "Error getting settings keys")
+							}
+							disabled={prefsBusy}
+						>
+							{prefs.isLoading ? "Loading..." : "Get Settings Keys"}
+						</button>
+
+						<button
+							onClick={() =>
+								runAsync(
+									async () => prefs.setPreferences(await serial.sendCommand("PING")),
+									"PING failed",
+								)
+							}
+							disabled={prefsBusy}
+						>
 							PING
 						</button>
 					</div>
 
 					<textarea
 						value={prefs.preferences}
-						onChange={(e) => prefs.setPreferences((e.target as HTMLTextAreaElement).value)}
+						onChange={(e) =>
+							prefs.setPreferences((e.target as HTMLTextAreaElement).value)
+						}
 						placeholder="Device preferences will appear here..."
 						rows={15}
 						cols={80}
