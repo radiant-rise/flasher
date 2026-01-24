@@ -20,11 +20,17 @@ export function usePreferences(serial: SerialConnection) {
 		[serial],
 	);
 
+	function extractResponse(text: string): string {
+		const match = text.match(/RESPONSE\s*([\s\S]*?)\s*END/);
+		return match?.[1]?.trim() ?? text;
+	}
+
 	function tryFormatJson(text: string): string {
+		const content = extractResponse(text);
 		try {
-			return JSON.stringify(JSON.parse(text), null, 2);
+			return JSON.stringify(JSON.parse(content), null, 2);
 		} catch {
-			return text;
+			return content;
 		}
 	}
 
@@ -61,7 +67,7 @@ export function usePreferences(serial: SerialConnection) {
 
 	const ping = useCallback(async () => {
 		const response = await serial.sendCommand("PING");
-		setPreferences(response);
+		setPreferences(extractResponse(response));
 	}, [serial]);
 
 	return {
