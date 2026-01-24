@@ -1,3 +1,5 @@
+import { Alert } from "@mantine/core";
+
 interface Props {
 	message: string;
 	onDismiss: () => void;
@@ -6,10 +8,17 @@ interface Props {
 export function AlertMessage({ message, onDismiss }: Props) {
 	if (!message) return null;
 
+	const lowerMsg = message.toLowerCase();
+	const isError = lowerMsg.includes("failed") || lowerMsg.includes("error") || lowerMsg.includes("invalid");
+
 	return (
-		<div>
+		<Alert
+			color={isError ? "red" : "green"}
+			variant="light"
+			withCloseButton
+			onClose={onDismiss}
+		>
 			{message}
-			<button onClick={onDismiss}>×</button>
-		</div>
+		</Alert>
 	);
 }

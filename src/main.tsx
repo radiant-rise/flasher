@@ -1,4 +1,11 @@
+import { MantineProvider } from "@mantine/core";
+import "@mantine/core/styles.css";
 import { render } from "preact";
 import { App } from "./App";
 
-render(<App />, document.getElementById("app")!);
+render(
+	<MantineProvider>
+		<App />
+	</MantineProvider>,
+	document.getElementById("app")!,
+);

@@ -58,8 +58,8 @@ export function usePreferences(serial: SerialConnection) {
 		setIsUpdating(true);
 		try {
 			const response = await serial.sendCommand(`SET_PREFS:${JSON.stringify(parsed)}`);
-			if (response.includes("ERROR")) throw new Error(`Update failed: ${response}`);
-			return `Response: ${response}`;
+			if (response.includes("ERROR")) throw new Error(`Update failed: ${extractResponse(response)}`);
+			return extractResponse(response);
 		} finally {
 			setIsUpdating(false);
 		}

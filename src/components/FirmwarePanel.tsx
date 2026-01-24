@@ -1,3 +1,4 @@
+import { Badge, Button, Card, Group, Loader, Progress, Radio, Select, Stack, Text } from "@mantine/core";
 import { releases } from "../data/releases";
 import type { FlashType } from "../types";
 
@@ -14,6 +15,11 @@ interface Props {
 	onProgram: () => void;
 }
 
+const FIRMWARE_OPTIONS = releases.map((r) => ({
+	value: r.label,
+	label: r.label,
+}));
+
 export function FirmwarePanel({
 	selectedLabel,
 	firmwareData,
@@ -27,57 +33,57 @@ export function FirmwarePanel({
 	onProgram,
 }: Props) {
 	return (
-		<div>
-			<div>
-				<label>Firmware Version: </label>
-				<select
-					value={selectedLabel}
-					onChange={(e) => onSelectFirmware((e.target as HTMLSelectElement).value)}
-					disabled={isLoading}
-				>
-					<option value="">Select firmware version...</option>
-					{releases.map((r) => (
-						<option key={r.label} value={r.label}>
-							{r.label}
-						</option>
-					))}
-				</select>{" "}
-				<label>
-					<input
-						type="radio"
-						name="flashType"
-						value="fw"
-						checked={flashType === "fw"}
-						onChange={() => onChangeFlashType("fw")}
-						disabled={isLoading}
-					/>
-					Only FW
-				</label>
-				<label>
-					<input
-						type="radio"
-						name="flashType"
-						value="full"
-						checked={flashType === "full"}
-						onChange={() => onChangeFlashType("full")}
-						disabled={isLoading}
-					/>
-					Full
-				</label>
-				{isLoading && <span> Loading firmware...</span>}
-				{firmwareData && <span> ✓ Firmware loaded</span>}
-			</div>
+		<Card withBorder>
+			<Stack gap="xs">
+				<Group justify="space-between">
+					<Group>
+						<Select
+							label="Firmware Version"
+							placeholder="Select firmware version..."
+							data={FIRMWARE_OPTIONS}
+							value={selectedLabel || null}
+							onChange={(value: string | null) => value && onSelectFirmware(value)}
+							disabled={isLoading}
+							w={200}
+						/>
 
-			{isProgramming && (
-				<div>
-					<progress value={progress} max="100" />
-					<div>{Math.round(progress)}%</div>
-				</div>
-			)}
+						<Radio.Group
+							value={flashType}
+							onChange={(value: string) => onChangeFlashType(value as FlashType)}
+						>
+							<Group>
+								<Radio value="fw" label="Only FW" disabled={isLoading} />
+								<Radio value="full" label="Full" disabled={isLoading} />
+							</Group>
+						</Radio.Group>
 
-			<button onClick={onProgram} disabled={isBusy || !firmwareData}>
-				{isProgramming ? "Programming..." : "Program"}
-			</button>
-		</div>
+						{isLoading && <Loader size="sm" />}
+						{firmwareData && (
+							<Badge color="green" variant="light">
+								Firmware loaded
+							</Badge>
+						)}
+					</Group>
+					<Group>
+						<Button
+							onClick={onProgram}
+							disabled={isBusy || !firmwareData}
+							loading={isProgramming}
+						>
+							Program
+						</Button>
+					</Group>
+				</Group>
+
+				{isProgramming && (
+					<Stack gap="xs">
+						<Progress value={progress} animated />
+						<Text size="sm" ta="center">
+							{Math.round(progress)}%
+						</Text>
+					</Stack>
+				)}
+			</Stack>
+		</Card>
 	);
 }

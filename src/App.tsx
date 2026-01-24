@@ -1,3 +1,4 @@
+import { Container, Stack, Title } from "@mantine/core";
 import { useCallback, useState } from "preact/hooks";
 import {
 	AlertMessage,
@@ -61,63 +62,65 @@ export function App() {
 	const isBusy = flash.isErasing || flash.isProgramming;
 
 	return (
-		<div>
-			<h3>Flasher</h3>
+		<Container size="md" py="xl">
+			<Stack gap="md">
+				<Title order={2}>Flasher</Title>
 
-			<ConnectionPanel
-				serial={serial}
-				baudRate={baudRate}
-				setBaudRate={setBaudRate}
-				isBusy={isBusy}
-				onConnect={() => runAsync(() => serial.connect(baudRate), "Connection failed")}
-				onDisconnect={() => runAsync(handleDisconnect, "Disconnect failed")}
-				onErase={() => runAsync(() => flash.eraseFlash(), "Erase failed")}
-				isErasing={flash.isErasing}
-			/>
+				<ConnectionPanel
+					serial={serial}
+					baudRate={baudRate}
+					setBaudRate={setBaudRate}
+					isBusy={isBusy}
+					onConnect={() => runAsync(() => serial.connect(baudRate), "Connection failed")}
+					onDisconnect={() => runAsync(handleDisconnect, "Disconnect failed")}
+					onErase={() => runAsync(() => flash.eraseFlash(), "Erase failed")}
+					isErasing={flash.isErasing}
+				/>
 
-			<AlertMessage message={alert} onDismiss={() => setAlert("")} />
+				<AlertMessage message={alert} onDismiss={() => setAlert("")} />
 
-			{serial.isConnected && !flash.isErasing && (
-				<>
-					<FirmwarePanel
-						selectedLabel={firmware.selectedLabel}
-						firmwareData={firmware.firmwareData}
-						isLoading={firmware.isLoading}
-						flashType={firmware.flashType}
-						isProgramming={flash.isProgramming}
-						progress={flash.progress}
-						isBusy={isBusy}
-						onSelectFirmware={(label) =>
-							runAsync(() => firmware.selectFirmware(label), "Failed to load firmware")
-						}
-						onChangeFlashType={(type) =>
-							runAsync(() => firmware.changeFlashType(type), "Failed to load firmware")
-						}
-						onProgram={handleProgram}
-					/>
+				{serial.isConnected && !flash.isErasing && (
+					<>
+						<FirmwarePanel
+							selectedLabel={firmware.selectedLabel}
+							firmwareData={firmware.firmwareData}
+							isLoading={firmware.isLoading}
+							flashType={firmware.flashType}
+							isProgramming={flash.isProgramming}
+							progress={flash.progress}
+							isBusy={isBusy}
+							onSelectFirmware={(label) =>
+								runAsync(() => firmware.selectFirmware(label), "Failed to load firmware")
+							}
+							onChangeFlashType={(type) =>
+								runAsync(() => firmware.changeFlashType(type), "Failed to load firmware")
+							}
+							onProgram={handleProgram}
+						/>
 
-					<PreferencesPanel
-						preferences={prefs.preferences}
-						setPreferences={prefs.setPreferences}
-						isLoading={prefs.isLoading}
-						isUpdating={prefs.isUpdating}
-						onGetSettings={() =>
-							runAsync(() => prefs.getAllSettings(), "Error getting settings")
-						}
-						onGetSettingsKeys={() =>
-							runAsync(() => prefs.getAllSettingsKeys(), "Error getting settings keys")
-						}
-						onUpdateSettings={() =>
-							runAsync(
-								() => prefs.updateAllSettings(),
-								"Error updating settings",
-								"Settings updated",
-							)
-						}
-						onPing={() => runAsync(() => prefs.ping(), "PING failed")}
-					/>
-				</>
-			)}
-		</div>
+						<PreferencesPanel
+							preferences={prefs.preferences}
+							setPreferences={prefs.setPreferences}
+							isLoading={prefs.isLoading}
+							isUpdating={prefs.isUpdating}
+							onGetSettings={() =>
+								runAsync(() => prefs.getAllSettings(), "Error getting settings")
+							}
+							onGetSettingsKeys={() =>
+								runAsync(() => prefs.getAllSettingsKeys(), "Error getting settings keys")
+							}
+							onUpdateSettings={() =>
+								runAsync(
+									() => prefs.updateAllSettings(),
+									"Error updating settings",
+									"Settings updated",
+								)
+							}
+							onPing={() => runAsync(() => prefs.ping(), "PING failed")}
+						/>
+					</>
+				)}
+			</Stack>
+		</Container>
 	);
 }

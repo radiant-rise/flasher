@@ -8,7 +8,7 @@ export default defineConfig({
 		global: "globalThis",
 	},
 	optimizeDeps: {
-		include: ["esptool-js", "crypto-js", "web-serial-polyfill"],
+		include: ["esptool-js", "crypto-js", "web-serial-polyfill", "@mantine/core", "@mantine/hooks"],
 	},
 	publicDir: 'public',
 });

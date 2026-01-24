@@ -1,3 +1,5 @@
+import { Button, Card, Group, Stack, Textarea, Title } from "@mantine/core";
+
 interface Props {
 	preferences: string;
 	setPreferences: (value: string) => void;
@@ -22,36 +24,46 @@ export function PreferencesPanel({
 	const isBusy = isLoading || isUpdating;
 
 	return (
-		<>
-			<hr />
-			<h4>Device Preferences</h4>
+		<Card withBorder>
+			<Stack gap="md">
+				<Title order={4}>Device Preferences</Title>
 
-			<div>
-				<button onClick={onGetSettings} disabled={isBusy}>
-					{isLoading ? "Loading..." : "Get Settings"}
-				</button>
+				<Group>
+					<Button
+						variant="outline"
+						onClick={onGetSettings}
+						disabled={isBusy}
+						loading={isLoading}
+					>
+						Get Settings
+					</Button>
 
-				<button onClick={onUpdateSettings} disabled={isBusy || !preferences.trim()}>
-					{isUpdating ? "Updating..." : "Update Settings"}
-				</button>
+					<Button
+						onClick={onUpdateSettings}
+						disabled={isBusy || !preferences.trim()}
+						loading={isUpdating}
+					>
+						Update Settings
+					</Button>
 
-				<button onClick={onGetSettingsKeys} disabled={isBusy}>
-					{isLoading ? "Loading..." : "Get Settings Keys"}
-				</button>
+					<Button variant="outline" onClick={onGetSettingsKeys} disabled={isBusy}>
+						Get Settings Keys
+					</Button>
 
-				<button onClick={onPing} disabled={isBusy}>
-					PING
-				</button>
-			</div>
+					<Button variant="light" onClick={onPing} disabled={isBusy}>
+						PING
+					</Button>
+				</Group>
 
-			<textarea
-				value={preferences}
-				onChange={(e) => setPreferences((e.target as HTMLTextAreaElement).value)}
-				placeholder="Device preferences will appear here..."
-				rows={15}
-				cols={80}
-				disabled={isBusy}
-			/>
-		</>
+				<Textarea
+					value={preferences}
+					onChange={(e: { currentTarget: HTMLTextAreaElement }) => setPreferences(e.currentTarget.value)}
+					placeholder="Device preferences will appear here..."
+					minRows={15}
+					autosize
+					disabled={isBusy}
+				/>
+			</Stack>
+		</Card>
 	);
 }
