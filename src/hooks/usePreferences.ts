@@ -12,17 +12,21 @@ export function usePreferences(serial: SerialConnection) {
 			try {
 				const response = await serial.sendCommand(command);
 				if (!response) throw new Error("No response received from device");
-				try {
-					setPreferences(JSON.stringify(JSON.parse(response), null, 2));
-				} catch {
-					setPreferences(response);
-				}
+				setPreferences(tryFormatJson(response));
 			} finally {
 				setIsLoading(false);
 			}
 		},
 		[serial],
 	);
+
+	function tryFormatJson(text: string): string {
+		try {
+			return JSON.stringify(JSON.parse(text), null, 2);
+		} catch {
+			return text;
+		}
+	}
 
 	const getAllSettings = useCallback(
 		() => fetchPreferences("GET_PREFS"),

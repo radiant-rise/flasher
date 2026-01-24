@@ -32,26 +32,34 @@ export function useSerialConnection() {
 		if (reader) {
 			try {
 				await reader.cancel();
-			} catch {}
+			} catch {
+				// Ignore - reader may already be released
+			}
 			try {
 				reader.releaseLock();
-			} catch {}
+			} catch {
+				// Ignore - lock may already be released
+			}
 		}
 
 		if (writer) {
 			try {
 				writer.releaseLock();
-			} catch {}
+			} catch {
+				// Ignore - lock may already be released
+			}
 		}
 
 		if (port) {
 			try {
 				await port.close();
-			} catch {}
+			} catch {
+				// Ignore - port may already be closed
+			}
 		}
 	}, []);
 
-	const setupNativeSerial = useCallback(async (baud: number) => {
+	const setupNativeSerial = useCallback(async (baudRate: number) => {
 		let port = portRef.current;
 		if (!port) {
 			if (!serialLib) {
@@ -61,7 +69,7 @@ export function useSerialConnection() {
 			portRef.current = port;
 		}
 
-		await port.open({ baudRate: baud });
+		await port.open({ baudRate });
 		writerRef.current = port.writable.getWriter();
 		readerRef.current = port.readable.getReader();
 		setChip("Native Connection");
@@ -75,11 +83,13 @@ export function useSerialConnection() {
 		if (transport) {
 			try {
 				await transport.disconnect();
-			} catch {}
+			} catch {
+				// Ignore - transport may already be disconnected
+			}
 		}
 	}, []);
 
-	const setupESPTool = useCallback(async (baud: number): Promise<string> => {
+	const setupESPTool = useCallback(async (baudRate: number): Promise<string> => {
 		const port = portRef.current;
 		if (!port) throw new Error("No device available");
 
@@ -88,10 +98,10 @@ export function useSerialConnection() {
 
 		const loader = new ESPLoader({
 			transport,
-			baudrate: baud,
+			baudrate: baudRate,
 			terminal,
 			debugLogging: false,
-			romBaudrate: baud,
+			romBaudrate: baudRate,
 		} as LoaderOptions);
 		espLoaderRef.current = loader;
 
@@ -101,8 +111,8 @@ export function useSerialConnection() {
 	}, []);
 
 	const connect = useCallback(
-		async (baud: number) => {
-			await setupNativeSerial(baud);
+		async (baudRate: number) => {
+			await setupNativeSerial(baudRate);
 			setIsConnected(true);
 		},
 		[setupNativeSerial],
@@ -129,19 +139,22 @@ export function useSerialConnection() {
 		let response = "";
 		const deadline = Date.now() + COMMAND_TIMEOUT_MS;
 
-		while (true) {
+		while (Date.now() < deadline) {
 			const remaining = deadline - Date.now();
 			if (remaining <= 0) break;
 
-			const timeoutId = setTimeout(() => reader.cancel(), remaining);
+			let timeoutId: ReturnType<typeof setTimeout> | undefined;
+			const timeoutPromise = new Promise<{ done: true; value: undefined }>((resolve) => {
+				timeoutId = setTimeout(() => resolve({ done: true, value: undefined }), remaining);
+			});
 
 			try {
-				const { done, value } = await reader.read();
+				const result = await Promise.race([reader.read(), timeoutPromise]);
 				clearTimeout(timeoutId);
 
-				if (done) break;
-				if (value) {
-					response += textDecoder.decode(value, { stream: true });
+				if (result.done) break;
+				if (result.value) {
+					response += textDecoder.decode(result.value, { stream: true });
 					if (response.includes("END") || response.includes("ERROR")) break;
 				}
 			} catch {
@@ -155,12 +168,12 @@ export function useSerialConnection() {
 
 	const withESPTool = useCallback(
 		async <T,>(
-			baud: number,
+			baudRate: number,
 			fn: (loader: ESPLoader) => Promise<T>,
 			postDelay = POST_FLASH_DELAY_MS,
 		): Promise<T> => {
 			await closeNativeSerial();
-			await setupESPTool(baud);
+			await setupESPTool(baudRate);
 
 			const loader = espLoaderRef.current;
 			if (!loader) throw new Error("ESP loader not initialized");
@@ -170,7 +183,7 @@ export function useSerialConnection() {
 			} finally {
 				await cleanupESPTool();
 				await delay(postDelay);
-				await setupNativeSerial(baud);
+				await setupNativeSerial(baudRate);
 			}
 		},
 		[closeNativeSerial, setupESPTool, cleanupESPTool, setupNativeSerial],

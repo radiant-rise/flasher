@@ -14,11 +14,11 @@ import {
 import { getErrorMessage } from "./utils/helpers";
 
 export function App() {
-	const [baudrate, setBaudrate] = useState(115200);
+	const [baudRate, setBaudRate] = useState(115200);
 	const [alert, setAlert] = useState("");
 
 	const serial = useSerialConnection();
-	const flash = useFlashOperations(serial, baudrate);
+	const flash = useFlashOperations(serial, baudRate);
 	const prefs = usePreferences(serial);
 	const firmware = useFirmwareLoader();
 
@@ -66,10 +66,10 @@ export function App() {
 
 			<ConnectionPanel
 				serial={serial}
-				baudrate={baudrate}
-				setBaudrate={setBaudrate}
+				baudRate={baudRate}
+				setBaudRate={setBaudRate}
 				isBusy={isBusy}
-				onConnect={() => runAsync(() => serial.connect(baudrate), "Connection failed")}
+				onConnect={() => runAsync(() => serial.connect(baudRate), "Connection failed")}
 				onDisconnect={() => runAsync(handleDisconnect, "Disconnect failed")}
 				onErase={() => runAsync(() => flash.eraseFlash(), "Erase failed")}
 				isErasing={flash.isErasing}

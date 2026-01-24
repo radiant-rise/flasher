@@ -1,10 +1,11 @@
 export function arrayBufferToBinaryString(buffer: ArrayBuffer): string {
 	const bytes = new Uint8Array(buffer);
-	let result = "";
-	for (const byte of bytes) {
-		result += String.fromCharCode(byte);
+	const chunks: string[] = [];
+	const chunkSize = 8192;
+	for (let i = 0; i < bytes.length; i += chunkSize) {
+		chunks.push(String.fromCharCode(...bytes.subarray(i, i + chunkSize)));
 	}
-	return result;
+	return chunks.join("");
 }
 
 export function delay(ms: number): Promise<void> {

@@ -14,11 +14,13 @@ export function useFirmwareLoader() {
 		if (!label) return;
 
 		const release = releases.find((r) => r.label === label);
-		if (!release) return;
+		if (!release) {
+			throw new Error(`Unknown firmware: ${label}`);
+		}
 
-		const fileName = type === "fw" ? "image.bin" : "image-merged.bin";
 		setIsLoading(true);
 		try {
+			const fileName = type === "fw" ? "image.bin" : "image-merged.bin";
 			const response = await fetch(
 				`./firmwares/${release.target}/${release.version}/${fileName}`,
 			);

@@ -6,7 +6,7 @@ export const serialLib =
 		: navigator.serial;
 
 export const terminal = {
-	clean() {},
+	clean: () => {},
 	writeLine: console.log,
 	write: console.log,
 };

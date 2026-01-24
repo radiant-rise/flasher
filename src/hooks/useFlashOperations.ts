@@ -4,7 +4,7 @@ import { useCallback, useState } from "preact/hooks";
 import { POST_PROGRAM_DELAY_MS } from "../utils/serial";
 import type { SerialConnection } from "./useSerialConnection";
 
-export function useFlashOperations(serial: SerialConnection, baudrate: number) {
+export function useFlashOperations(serial: SerialConnection, baudRate: number) {
 	const [isErasing, setIsErasing] = useState(false);
 	const [isProgramming, setIsProgramming] = useState(false);
 	const [progress, setProgress] = useState(0);
@@ -12,11 +12,11 @@ export function useFlashOperations(serial: SerialConnection, baudrate: number) {
 	const eraseFlash = useCallback(async () => {
 		setIsErasing(true);
 		try {
-			await serial.withESPTool(baudrate, (loader) => loader.eraseFlash());
+			await serial.withESPTool(baudRate, (loader) => loader.eraseFlash());
 		} finally {
 			setIsErasing(false);
 		}
-	}, [serial, baudrate]);
+	}, [serial, baudRate]);
 
 	const programFlash = useCallback(
 		async (fileData: string, address: number) => {
@@ -24,7 +24,7 @@ export function useFlashOperations(serial: SerialConnection, baudrate: number) {
 			setProgress(0);
 			try {
 				await serial.withESPTool(
-					baudrate,
+					baudRate,
 					async (loader) => {
 						await loader.writeFlash({
 							fileArray: [{ data: fileData, address }],
@@ -48,7 +48,7 @@ export function useFlashOperations(serial: SerialConnection, baudrate: number) {
 				setProgress(0);
 			}
 		},
-		[serial, baudrate],
+		[serial, baudRate],
 	);
 
 	return { isErasing, isProgramming, progress, eraseFlash, programFlash };

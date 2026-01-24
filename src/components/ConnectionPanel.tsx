@@ -2,8 +2,8 @@ import type { SerialConnection } from "../hooks";
 
 interface Props {
 	serial: SerialConnection;
-	baudrate: number;
-	setBaudrate: (baudrate: number) => void;
+	baudRate: number;
+	setBaudRate: (baudRate: number) => void;
 	isBusy: boolean;
 	onConnect: () => void;
 	onDisconnect: () => void;
@@ -13,8 +13,8 @@ interface Props {
 
 export function ConnectionPanel({
 	serial,
-	baudrate,
-	setBaudrate,
+	baudRate,
+	setBaudRate,
 	isBusy,
 	onConnect,
 	onDisconnect,
@@ -24,10 +24,10 @@ export function ConnectionPanel({
 	if (!serial.isConnected) {
 		return (
 			<div>
-				<label>Baudrate: </label>
+				<label>Baud rate: </label>
 				<select
-					value={baudrate}
-					onChange={(e) => setBaudrate(Number((e.target as HTMLSelectElement).value))}
+					value={baudRate}
+					onChange={(e) => setBaudRate(Number((e.target as HTMLSelectElement).value))}
 				>
 					<option value={921600}>921600</option>
 					<option value={460800}>460800</option>
