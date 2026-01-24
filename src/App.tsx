@@ -71,7 +71,16 @@ export function App() {
 					baudRate={baudRate}
 					setBaudRate={setBaudRate}
 					isBusy={isBusy}
-					onConnect={() => runAsync(() => serial.connect(baudRate), "Connection failed")}
+					onConnect={() =>
+						runAsync(async () => {
+							await serial.connect(baudRate);
+							try {
+								await prefs.initializeSettings();
+							} catch {
+								// Settings initialization is non-critical
+							}
+						}, "Connection failed")
+					}
 					onDisconnect={() => runAsync(handleDisconnect, "Disconnect failed")}
 					onErase={() => runAsync(() => flash.eraseFlash(), "Erase failed")}
 					isErasing={flash.isErasing}
@@ -117,6 +126,12 @@ export function App() {
 								)
 							}
 							onPing={() => runAsync(() => prefs.ping(), "PING failed")}
+							settingsKeys={prefs.settingsKeys}
+							settingsValues={prefs.settingsValues}
+							onUpdateSettingValue={prefs.updateSettingValue}
+							onSaveSettingsValues={() =>
+								runAsync(() => prefs.saveSettingsValues(), "Error saving settings", "Settings saved")
+							}
 						/>
 					</>
 				)}
