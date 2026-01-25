@@ -1,5 +1,13 @@
-import { Button, Card, Group, Stack, Switch, Text, TextInput, Textarea, Title } from "@mantine/core";
+import { Button, Card, Group, NumberInput, PasswordInput, Select, Stack, Switch, Text, TextInput, Textarea, Title } from "@mantine/core";
 import { useState } from "preact/hooks";
+import timezones from "../data/zones.json";
+
+const TIMEZONE_OPTIONS = Object.keys(timezones).map((tz) => ({ value: tz, label: tz }));
+
+const WEATHER_UNIT_OPTIONS = [
+	{ value: "m", label: "Metric (m)" },
+	{ value: "e", label: "Imperial (e)" },
+];
 
 interface Props {
 	preferences: string;
@@ -86,17 +94,77 @@ export function PreferencesPanel({
 				) : settingsKeys.length > 0 ? (
 					<>
 						<Stack gap="sm">
-							{settingsKeys.map((key) => (
-								<TextInput
-									key={key}
-									label={key}
-									value={settingsValues[key] ?? ""}
-									onChange={(e: { currentTarget: HTMLInputElement }) =>
-										onUpdateSettingValue(key, e.currentTarget.value)
-									}
-									disabled={isBusy}
-								/>
-							))}
+							{settingsKeys.map((key) => {
+								const value = settingsValues[key] ?? "";
+
+								if (key === "display.brightness") {
+									const numValue = value === "" ? "" : Number(value);
+									return (
+										<NumberInput
+											key={key}
+											label={key}
+											value={Number.isNaN(numValue) ? "" : numValue}
+											onChange={(val: string | number) => onUpdateSettingValue(key, String(val))}
+											min={1}
+											max={16}
+											disabled={isBusy}
+										/>
+									);
+								}
+
+								if (key === "wifi.password") {
+									return (
+										<PasswordInput
+											key={key}
+											label={key}
+											value={value}
+											onChange={(e: { currentTarget: HTMLInputElement }) =>
+												onUpdateSettingValue(key, e.currentTarget.value)
+											}
+											disabled={isBusy}
+										/>
+									);
+								}
+
+								if (key === "weather.units") {
+									return (
+										<Select
+											key={key}
+											label={key}
+											value={value || null}
+											onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
+											data={WEATHER_UNIT_OPTIONS}
+											disabled={isBusy}
+										/>
+									);
+								}
+
+								if (key === "datetime.timezone") {
+									return (
+										<Select
+											key={key}
+											label={key}
+											value={value || "Europe/Tallinn"}
+											onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
+											data={TIMEZONE_OPTIONS}
+											searchable
+											disabled={isBusy}
+										/>
+									);
+								}
+
+								return (
+									<TextInput
+										key={key}
+										label={key}
+										value={value}
+										onChange={(e: { currentTarget: HTMLInputElement }) =>
+											onUpdateSettingValue(key, e.currentTarget.value)
+										}
+										disabled={isBusy}
+									/>
+								);
+							})}
 						</Stack>
 						<Button
 							onClick={onSaveSettingsValues}
