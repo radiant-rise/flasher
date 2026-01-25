@@ -24,8 +24,8 @@ importers:
         specifier: ^0.5.6
         version: 0.5.6
       preact:
-        specifier: ^10.26.9
-        version: 10.26.9
+        specifier: ^10.26.10
+        version: 10.26.10
       web-serial-polyfill:
         specifier: ^1.0.15
         version: 1.0.15
@@ -35,7 +35,7 @@ importers:
         version: 2.0.5
       '@preact/preset-vite':
         specifier: ^2.10.1
-        version: 2.10.1(@babel/core@7.27.4)(preact@10.26.9)(vite@6.3.5)
+        version: 2.10.1(@babel/core@7.27.4)(preact@10.26.10)(vite@6.3.5)
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -728,8 +728,8 @@ packages:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
 
-  preact@10.26.9:
-    resolution: {integrity: sha512-SSjF9vcnF27mJK1XyFMNJzFd5u3pQiATFqoaDy03XuN00u4ziveVVEGt5RKJrDR8MHE/wJo9Nnad56RLzS2RMA==}
+  preact@10.26.10:
+    resolution: {integrity: sha512-sqdfdSa8AZeJ+wfMYjFImIRTnhfyPSLCH+LEb1+BoRUDKLnE6AnvZeClx3Bkj2Q9nn44GFAefOKIx5oc54q93A==}
 
   prop-types@15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
@@ -1263,12 +1263,12 @@ snapshots:
     dependencies:
       react: 19.2.3
 
-  '@preact/preset-vite@2.10.1(@babel/core@7.27.4)(preact@10.26.9)(vite@6.3.5)':
+  '@preact/preset-vite@2.10.1(@babel/core@7.27.4)(preact@10.26.10)(vite@6.3.5)':
     dependencies:
       '@babel/core': 7.27.4
       '@babel/plugin-transform-react-jsx': 7.27.1(@babel/core@7.27.4)
       '@babel/plugin-transform-react-jsx-development': 7.27.1(@babel/core@7.27.4)
-      '@prefresh/vite': 2.4.7(preact@10.26.9)(vite@6.3.5)
+      '@prefresh/vite': 2.4.7(preact@10.26.10)(vite@6.3.5)
       '@rollup/pluginutils': 4.2.1
       babel-plugin-transform-hook-names: 1.0.2(@babel/core@7.27.4)
       debug: 4.4.1
@@ -1281,20 +1281,20 @@ snapshots:
 
   '@prefresh/babel-plugin@0.5.1': {}
 
-  '@prefresh/core@1.5.3(preact@10.26.9)':
+  '@prefresh/core@1.5.3(preact@10.26.10)':
     dependencies:
-      preact: 10.26.9
+      preact: 10.26.10
 
   '@prefresh/utils@1.2.0': {}
 
-  '@prefresh/vite@2.4.7(preact@10.26.9)(vite@6.3.5)':
+  '@prefresh/vite@2.4.7(preact@10.26.10)(vite@6.3.5)':
     dependencies:
       '@babel/core': 7.27.4
       '@prefresh/babel-plugin': 0.5.1
-      '@prefresh/core': 1.5.3(preact@10.26.9)
+      '@prefresh/core': 1.5.3(preact@10.26.10)
       '@prefresh/utils': 1.2.0
       '@rollup/pluginutils': 4.2.1
-      preact: 10.26.9
+      preact: 10.26.10
       vite: 6.3.5
     transitivePeerDependencies:
       - supports-color
@@ -1540,7 +1540,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  preact@10.26.9: {}
+  preact@10.26.10: {}
 
   prop-types@15.8.1:
     dependencies:
