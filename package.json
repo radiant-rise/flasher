@@ -10,6 +10,7 @@
 	"dependencies": {
 		"@mantine/core": "^8.3.13",
 		"@mantine/hooks": "^8.3.13",
+		"@mantine/notifications": "^8.3.13",
 		"crypto-js": "^4.2.0",
 		"esptool-js": "^0.5.6",
 		"preact": "^10.26.9",

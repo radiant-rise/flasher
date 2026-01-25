@@ -1,4 +1,5 @@
-import { Alert } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { useEffect, useRef } from "preact/hooks";
 
 interface Props {
 	message: string;
@@ -6,19 +7,22 @@ interface Props {
 }
 
 export function AlertMessage({ message, onDismiss }: Props) {
-	if (!message) return null;
+	const lastShownMessage = useRef("");
+	const onDismissRef = useRef(onDismiss);
+	onDismissRef.current = onDismiss;
 
-	const lowerMsg = message.toLowerCase();
-	const isError = lowerMsg.includes("failed") || lowerMsg.includes("error") || lowerMsg.includes("invalid");
+	useEffect(() => {
+		if (message && message !== lastShownMessage.current) {
+			const isError = /failed|error|invalid/i.test(message);
 
-	return (
-		<Alert
-			color={isError ? "red" : "green"}
-			variant="light"
-			withCloseButton
-			onClose={onDismiss}
-		>
-			{message}
-		</Alert>
-	);
+			notifications.show({
+				message,
+				color: isError ? "red" : "green",
+				onClose: () => onDismissRef.current(),
+			});
+		}
+		lastShownMessage.current = message;
+	}, [message]);
+
+	return null;
 }
