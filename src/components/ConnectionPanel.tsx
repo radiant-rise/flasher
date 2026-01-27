@@ -1,7 +1,8 @@
 import { Badge, Button, Card, Group, Select, Text } from "@mantine/core";
-import type { SerialConnection } from "../hooks";
+import type { SerialConnection, TranslationFunction } from "../hooks";
 
 interface Props {
+	t: TranslationFunction;
 	serial: SerialConnection;
 	baudRate: number;
 	setBaudRate: (baudRate: number) => void;
@@ -20,6 +21,7 @@ const BAUD_RATES = [
 ];
 
 export function ConnectionPanel({
+	t,
 	serial,
 	baudRate,
 	setBaudRate,
@@ -34,13 +36,13 @@ export function ConnectionPanel({
 			<Card withBorder>
 				<Group align="flex-end">
 					<Select
-						label="Baud rate"
+						label={t("baudRate")}
 						data={BAUD_RATES}
 						value={String(baudRate)}
 						onChange={(value: string | null) => value && setBaudRate(Number(value))}
 						w={120}
 					/>
-					<Button onClick={onConnect}>Connect</Button>
+					<Button onClick={onConnect}>{t("connect")}</Button>
 				</Group>
 			</Card>
 		);
@@ -50,17 +52,17 @@ export function ConnectionPanel({
 		<Card withBorder>
 			<Group justify="space-between">
 				<Group>
-					<Text>Connected to:</Text>
+					<Text>{t("connectedTo")}</Text>
 					<Badge variant="light" color="green" size="lg">
 						{serial.chip}
 					</Badge>
 				</Group>
 				<Group>
 					<Button variant="outline" onClick={onDisconnect} disabled={isBusy}>
-						Disconnect
+						{t("disconnect")}
 					</Button>
 					<Button color="red" onClick={onErase} disabled={isBusy} loading={isErasing}>
-						Erase Flash
+						{t("eraseFlash")}
 					</Button>
 				</Group>
 			</Group>

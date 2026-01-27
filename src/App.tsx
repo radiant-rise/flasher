@@ -1,9 +1,10 @@
-import { Container, Stack, Title } from "@mantine/core";
+import { Container, Group, Stack, Title } from "@mantine/core";
 import { useCallback, useState } from "preact/hooks";
 import {
 	AlertMessage,
 	ConnectionPanel,
 	FirmwarePanel,
+	LanguageSelector,
 	PreferencesPanel,
 } from "./components";
 import {
@@ -11,6 +12,7 @@ import {
 	useFlashOperations,
 	usePreferences,
 	useSerialConnection,
+	useTranslation,
 } from "./hooks";
 import { getErrorMessage } from "./utils/helpers";
 
@@ -22,6 +24,7 @@ export function App() {
 	const flash = useFlashOperations(serial, baudRate);
 	const prefs = usePreferences(serial);
 	const firmware = useFirmwareLoader();
+	const { language, setLanguage, t } = useTranslation();
 
 	const runAsync = useCallback(
 		async (fn: () => Promise<unknown>, errorContext: string, successMsg?: string) => {
@@ -64,9 +67,13 @@ export function App() {
 	return (
 		<Container size="md" py="xl">
 			<Stack gap="md">
-				<Title order={2}>Flasher</Title>
+				<Group justify="space-between" align="center">
+					<Title order={2}>{t("title")}</Title>
+					<LanguageSelector language={language} onChange={setLanguage} />
+				</Group>
 
 				<ConnectionPanel
+					t={t}
 					serial={serial}
 					baudRate={baudRate}
 					setBaudRate={setBaudRate}
@@ -91,6 +98,7 @@ export function App() {
 				{serial.isConnected && !flash.isErasing && (
 					<>
 						<FirmwarePanel
+							t={t}
 							selectedLabel={firmware.selectedLabel}
 							firmwareData={firmware.firmwareData}
 							isLoading={firmware.isLoading}
@@ -108,6 +116,7 @@ export function App() {
 						/>
 
 						<PreferencesPanel
+							t={t}
 							preferences={prefs.preferences}
 							setPreferences={prefs.setPreferences}
 							isLoading={prefs.isLoading}

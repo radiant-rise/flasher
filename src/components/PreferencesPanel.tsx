@@ -1,68 +1,62 @@
 import { Button, Card, Group, NumberInput, PasswordInput, Popover, Select, Stack, Switch, Tabs, TagsInput, Text, TextInput, Textarea, Title } from "@mantine/core";
 import { useState } from "preact/hooks";
 import timezones from "../data/zones.json";
+import type { TranslationFunction } from "../hooks";
 import { GeoCoordinatePicker } from "./GeoCoordinatePicker";
 
 const TIMEZONE_OPTIONS = Object.keys(timezones).map((tz) => ({ value: tz, label: tz }));
 
-const WEATHER_UNIT_OPTIONS = [
-	{ value: "m", label: "Metric (m)" },
-	{ value: "e", label: "Imperial (e)" },
-];
-
-interface SettingConfig {
-	label: string;
-	tooltip?: string;
+interface SettingTranslationKeys {
+	labelKey: string;
+	tooltipKey?: string;
 }
 
-// Translation-ready settings configuration
-// To add i18n support, replace string values with t("key") calls
-const SETTINGS_CONFIG: Record<string, SettingConfig> = {
+const SETTINGS_TRANSLATION_KEYS: Record<string, SettingTranslationKeys> = {
 	"display.brightness": {
-		label: "Display Brightness",
-		tooltip: "Set display brightness level (1-16)",
+		labelKey: "settings.displayBrightness",
+		tooltipKey: "settings.displayBrightnessTooltip",
 	},
 	"wifi.ssid": {
-		label: "WiFi Network",
-		tooltip: "The name of your WiFi network",
+		labelKey: "settings.wifiNetwork",
+		tooltipKey: "settings.wifiNetworkTooltip",
 	},
 	"wifi.password": {
-		label: "WiFi Password",
+		labelKey: "settings.wifiPassword",
 	},
 	"weather.units": {
-		label: "Weather Units",
-		tooltip: "Choose between metric (Celsius) or imperial (Fahrenheit)",
+		labelKey: "settings.weatherUnits",
+		tooltipKey: "settings.weatherUnitsTooltip",
 	},
 	"weather.geocode": {
-		label: "Location",
-		tooltip: "Geographic coordinates for weather data",
+		labelKey: "settings.location",
+		tooltipKey: "settings.locationTooltip",
 	},
 	"datetime.timezone": {
-		label: "Timezone",
-		tooltip: "Your local timezone for date and time display",
+		labelKey: "settings.timezone",
+		tooltipKey: "settings.timezoneTooltip",
 	},
 	"finance.symbols": {
-		label: "Stock Symbols",
-		tooltip: "Enter stock ticker symbols. Find symbols on Yahoo Finance.",
+		labelKey: "settings.stockSymbols",
+		tooltipKey: "settings.stockSymbolsTooltip",
 	},
 	"weather.apikey": {
-		label: "Weather API Key",
-		tooltip: "API key for accessing weather data services",
+		labelKey: "settings.weatherApiKey",
+		tooltipKey: "settings.weatherApiKeyTooltip",
 	},
 	"request.user_agent": {
-		label: "User Agent",
-		tooltip: "Custom User-Agent string for HTTP requests",
+		labelKey: "settings.userAgent",
+		tooltipKey: "settings.userAgentTooltip",
 	},
 	"datetime.ntp_servers": {
-		label: "NTP Servers",
-		tooltip: "Network Time Protocol servers for time synchronization",
+		labelKey: "settings.ntpServers",
+		tooltipKey: "settings.ntpServersTooltip",
 	}
 };
 
-function SettingLabel({ settingKey }: { settingKey: string }) {
-	const config = SETTINGS_CONFIG[settingKey];
-	const label = config?.label ?? settingKey;
-	const tooltip = config?.tooltip;
+function SettingLabel({ settingKey, t }: { settingKey: string; t: TranslationFunction }) {
+	const config = SETTINGS_TRANSLATION_KEYS[settingKey];
+	const label = config ? t(config.labelKey) : settingKey;
+	const tooltip = config?.tooltipKey ? t(config.tooltipKey) : undefined;
 
 	if (!tooltip) {
 		return <>{label}</>;
@@ -84,16 +78,22 @@ function SettingLabel({ settingKey }: { settingKey: string }) {
 }
 
 interface SettingsTabsProps {
+	t: TranslationFunction;
 	settingsKeys: string[];
 	settingsValues: Record<string, string>;
 	onUpdateSettingValue: (key: string, value: string) => void;
 	disabled: boolean;
 }
 
-function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disabled }: SettingsTabsProps) {
+function SettingsTabs({ t, settingsKeys, settingsValues, onUpdateSettingValue, disabled }: SettingsTabsProps) {
 	const weatherKeys = settingsKeys.filter((k) => k.startsWith("weather."));
 	const financeKeys = settingsKeys.filter((k) => k.startsWith("finance."));
 	const generalKeys = settingsKeys.filter((k) => !k.startsWith("weather.") && !k.startsWith("finance."));
+
+	const weatherUnitOptions = [
+		{ value: "m", label: t("weatherUnitsMetric") },
+		{ value: "e", label: t("weatherUnitsImperial") },
+	];
 
 	const renderSetting = (key: string) => {
 		const value = settingsValues[key] ?? "";
@@ -103,7 +103,7 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 			return (
 				<NumberInput
 					key={key}
-					label={<SettingLabel settingKey={key} />}
+					label={<SettingLabel settingKey={key} t={t} />}
 					value={Number.isNaN(numValue) ? "" : numValue}
 					onChange={(val: string | number) => onUpdateSettingValue(key, String(val))}
 					min={1}
@@ -117,7 +117,7 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 			return (
 				<PasswordInput
 					key={key}
-					label={<SettingLabel settingKey={key} />}
+					label={<SettingLabel settingKey={key} t={t} />}
 					value={value}
 					onChange={(e: { currentTarget: HTMLInputElement }) =>
 						onUpdateSettingValue(key, e.currentTarget.value)
@@ -131,10 +131,10 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 			return (
 				<Select
 					key={key}
-					label={<SettingLabel settingKey={key} />}
+					label={<SettingLabel settingKey={key} t={t} />}
 					value={value || null}
 					onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
-					data={WEATHER_UNIT_OPTIONS}
+					data={weatherUnitOptions}
 					disabled={disabled}
 				/>
 			);
@@ -144,7 +144,7 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 			return (
 				<Select
 					key={key}
-					label={<SettingLabel settingKey={key} />}
+					label={<SettingLabel settingKey={key} t={t} />}
 					value={value || "Europe/Tallinn"}
 					onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
 					data={TIMEZONE_OPTIONS}
@@ -158,7 +158,7 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 			return (
 				<GeoCoordinatePicker
 					key={key}
-					label={<SettingLabel settingKey={key} />}
+					label={<SettingLabel settingKey={key} t={t} />}
 					value={value}
 					onChange={(val: string) => onUpdateSettingValue(key, val)}
 					disabled={disabled}
@@ -171,7 +171,7 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 			return (
 				<TagsInput
 					key={key}
-					label={<SettingLabel settingKey={key} />}
+					label={<SettingLabel settingKey={key} t={t} />}
 					value={tagsValue}
 					onChange={(tags: string[]) => onUpdateSettingValue(key, tags.join(","))}
 					disabled={disabled}
@@ -182,7 +182,7 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 		return (
 			<TextInput
 				key={key}
-				label={<SettingLabel settingKey={key} />}
+				label={<SettingLabel settingKey={key} t={t} />}
 				value={value}
 				onChange={(e: { currentTarget: HTMLInputElement }) =>
 					onUpdateSettingValue(key, e.currentTarget.value)
@@ -197,9 +197,9 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 	return (
 		<Tabs defaultValue={defaultTab}>
 			<Tabs.List>
-				{generalKeys.length > 0 && <Tabs.Tab value="general">General</Tabs.Tab>}
-				{weatherKeys.length > 0 && <Tabs.Tab value="weather">Weather</Tabs.Tab>}
-				{financeKeys.length > 0 && <Tabs.Tab value="finance">Finance</Tabs.Tab>}
+				{generalKeys.length > 0 && <Tabs.Tab value="general">{t("general")}</Tabs.Tab>}
+				{weatherKeys.length > 0 && <Tabs.Tab value="weather">{t("weather")}</Tabs.Tab>}
+				{financeKeys.length > 0 && <Tabs.Tab value="finance">{t("finance")}</Tabs.Tab>}
 			</Tabs.List>
 
 			{generalKeys.length > 0 && (
@@ -230,6 +230,7 @@ function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disa
 }
 
 interface Props {
+	t: TranslationFunction;
 	preferences: string;
 	setPreferences: (value: string) => void;
 	isLoading: boolean;
@@ -245,6 +246,7 @@ interface Props {
 }
 
 export function PreferencesPanel({
+	t,
 	preferences,
 	setPreferences,
 	isLoading,
@@ -265,9 +267,9 @@ export function PreferencesPanel({
 		<Card withBorder>
 			<Stack gap="md">
 				<Group justify="space-between">
-					<Title order={4}>Device Preferences</Title>
+					<Title order={4}>{t("devicePreferences")}</Title>
 					<Switch
-						label="Advanced"
+						label={t("advanced")}
 						checked={advanced}
 						onChange={(e: { currentTarget: HTMLInputElement }) => setAdvanced(e.currentTarget.checked)}
 					/>
@@ -282,7 +284,7 @@ export function PreferencesPanel({
 								disabled={isBusy}
 								loading={isLoading}
 							>
-								Get Settings
+								{t("getSettings")}
 							</Button>
 
 							<Button
@@ -290,22 +292,22 @@ export function PreferencesPanel({
 								disabled={isBusy || !preferences.trim()}
 								loading={isUpdating}
 							>
-								Update Settings
+								{t("updateSettings")}
 							</Button>
 
 							<Button variant="outline" onClick={onGetSettingsKeys} disabled={isBusy}>
-								Get Settings Keys
+								{t("getSettingsKeys")}
 							</Button>
 
 							<Button variant="light" onClick={onPing} disabled={isBusy}>
-								PING
+								{t("ping")}
 							</Button>
 						</Group>
 
 						<Textarea
 							value={preferences}
 							onChange={(e: { currentTarget: HTMLTextAreaElement }) => setPreferences(e.currentTarget.value)}
-							placeholder="Device preferences will appear here..."
+							placeholder={t("preferencesPlaceholder")}
 							minRows={15}
 							autosize
 							disabled={isBusy}
@@ -314,6 +316,7 @@ export function PreferencesPanel({
 				) : settingsKeys.length > 0 ? (
 					<>
 						<SettingsTabs
+							t={t}
 							settingsKeys={settingsKeys}
 							settingsValues={settingsValues}
 							onUpdateSettingValue={onUpdateSettingValue}
@@ -324,12 +327,12 @@ export function PreferencesPanel({
 							disabled={isBusy}
 							loading={isUpdating}
 						>
-							Update Settings
+							{t("updateSettings")}
 						</Button>
 					</>
 				) : (
 					<Text c="dimmed" size="sm">
-						No settings available. Use Advanced mode to fetch settings.
+						{t("noSettingsAvailable")}
 					</Text>
 				)}
 			</Stack>
