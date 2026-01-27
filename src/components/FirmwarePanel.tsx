@@ -47,7 +47,6 @@ export function FirmwarePanel({
 							value={selectedLabel || null}
 							onChange={(value: string | null) => value && onSelectFirmware(value)}
 							disabled={isLoading}
-							w={200}
 						/>
 
 						<Radio.Group

@@ -34,13 +34,12 @@ export function ConnectionPanel({
 	if (!serial.isConnected) {
 		return (
 			<Card withBorder>
-				<Group align="flex-end">
+				<Group>
 					<Select
 						label={t("baudRate")}
 						data={BAUD_RATES}
 						value={String(baudRate)}
 						onChange={(value: string | null) => value && setBaudRate(Number(value))}
-						w={120}
 					/>
 					<Button onClick={onConnect}>{t("connect")}</Button>
 				</Group>
