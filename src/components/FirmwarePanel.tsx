@@ -53,7 +53,7 @@ export function FirmwarePanel({
 						>
 							<Group>
 								<Radio value="fw" label="Only FW" disabled={isLoading} />
-								<Radio value="full" label="Full" disabled={isLoading} />
+								<Radio value="full" label="Full FW" disabled={isLoading} />
 							</Group>
 						</Radio.Group>
 
