@@ -22,7 +22,7 @@ export function useFirmwareLoader() {
 		try {
 			const fileName = type === "fw" ? "image.bin" : "image-merged.bin";
 			const response = await fetch(
-				`./firmwares/${release.target}/${release.version}/${fileName}`,
+				`./data/${release.target}/${release.version}/${fileName}`,
 			);
 			if (!response.ok) {
 				throw new Error(`Failed to load firmware: ${response.status}`);

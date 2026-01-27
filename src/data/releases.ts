@@ -1,5 +1,5 @@
 import type { Release, ReleasesData } from "../types";
-import releasesData from "../firmwares/releases.json";
+import releasesData from "../data/releases.json";
 
 export const releases: Release[] = Object.entries(releasesData as ReleasesData).flatMap(
 	([target, versions]) =>
