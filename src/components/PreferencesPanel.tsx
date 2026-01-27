@@ -1,6 +1,7 @@
-import { Button, Card, Group, NumberInput, PasswordInput, Select, Stack, Switch, Text, TextInput, Textarea, Title } from "@mantine/core";
+import { Anchor, Button, Card, Group, NumberInput, PasswordInput, Popover, Select, Stack, Switch, TagsInput, Text, TextInput, Textarea, Title } from "@mantine/core";
 import { useState } from "preact/hooks";
 import timezones from "../data/zones.json";
+import { GeoCoordinatePicker } from "./GeoCoordinatePicker";
 
 const TIMEZONE_OPTIONS = Object.keys(timezones).map((tz) => ({ value: tz, label: tz }));
 
@@ -148,6 +149,48 @@ export function PreferencesPanel({
 											onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
 											data={TIMEZONE_OPTIONS}
 											searchable
+											disabled={isBusy}
+										/>
+									);
+								}
+
+								if (key === "weather.geocode") {
+									return (
+										<GeoCoordinatePicker
+											key={key}
+											label={key}
+											value={value}
+											onChange={(val: string) => onUpdateSettingValue(key, val)}
+											disabled={isBusy}
+										/>
+									);
+								}
+
+								if (key === "finance.symbols") {
+									const tagsValue = value ? value.split(",").filter(Boolean) : [];
+									return (
+										<TagsInput
+											key={key}
+											label={
+												<Group gap={4}>
+													<Text size="sm" fw={500}>Symbols</Text>
+													<Popover width={250} position="top" withArrow shadow="md">
+														<Popover.Target>
+															<Text size="xs" c="dimmed" style={{ cursor: "help" }}>[i]</Text>
+														</Popover.Target>
+														<Popover.Dropdown>
+															<Text size="xs">
+																Enter stock ticker symbols.{" "}
+																<Anchor href="https://finance.yahoo.com/lookup" target="_blank" rel="noopener noreferrer" size="xs">
+																	Find symbols on Yahoo Finance
+																</Anchor>
+															</Text>
+														</Popover.Dropdown>
+													</Popover>
+												</Group>
+											}
+											value={tagsValue}
+											onChange={(tags: string[]) => onUpdateSettingValue(key, tags.join(","))}
 											disabled={isBusy}
 										/>
 									);
