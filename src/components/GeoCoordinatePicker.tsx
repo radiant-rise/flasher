@@ -1,7 +1,8 @@
 import { TextInput, Box } from "@mantine/core";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { LatLngExpression, LeafletMouseEvent, Map, Marker as LeafletMarker } from "leaflet";
+import type { ComponentChildren } from "preact";
 import L from "leaflet";
 
 // Fix for default marker icons in leaflet with Vite
@@ -23,7 +24,7 @@ const markerIcon = L.icon({
 });
 
 interface Props {
-	label: string;
+	label: ComponentChildren;
 	value: string;
 	onChange: (value: string) => void;
 	disabled?: boolean;
@@ -44,6 +45,27 @@ function parseCoordinates(value: string): [number, number] | null {
 
 function formatCoordinates(lat: number, lon: number): string {
 	return `${lat.toFixed(6)},${lon.toFixed(6)}`;
+}
+
+// Invalidate map size when container becomes visible (fixes tiles not loading in hidden tabs)
+function MapInvalidator() {
+	const map = useMap();
+
+	useEffect(() => {
+		const container = map.getContainer();
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting) {
+					map.invalidateSize();
+				}
+			},
+			{ threshold: 0.1 }
+		);
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, [map]);
+
+	return null;
 }
 
 function DraggableMarker({
@@ -136,7 +158,7 @@ export function GeoCoordinatePicker({ label, value, onChange, disabled }: Props)
 				onChange={handleTextChange}
 				onBlur={handleTextBlur}
 				placeholder="lat, lon (e.g., 59.437, 24.7536)"
-				disabled={disabled}
+				disabled={disabled ?? false}
 			/>
 			<Box mt="xs" style={{ height: 200, borderRadius: 8, overflow: "hidden" }}>
 				<MapContainer
@@ -149,6 +171,7 @@ export function GeoCoordinatePicker({ label, value, onChange, disabled }: Props)
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 					/>
+					<MapInvalidator />
 					<DraggableMarker position={position} onPositionChange={handlePositionChange} disabled={disabled ?? false} />
 				</MapContainer>
 			</Box>

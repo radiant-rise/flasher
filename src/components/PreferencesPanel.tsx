@@ -1,4 +1,4 @@
-import { Anchor, Button, Card, Group, NumberInput, PasswordInput, Popover, Select, Stack, Switch, TagsInput, Text, TextInput, Textarea, Title } from "@mantine/core";
+import { Button, Card, Group, NumberInput, PasswordInput, Popover, Select, Stack, Switch, Tabs, TagsInput, Text, TextInput, Textarea, Title } from "@mantine/core";
 import { useState } from "preact/hooks";
 import timezones from "../data/zones.json";
 import { GeoCoordinatePicker } from "./GeoCoordinatePicker";
@@ -9,6 +9,225 @@ const WEATHER_UNIT_OPTIONS = [
 	{ value: "m", label: "Metric (m)" },
 	{ value: "e", label: "Imperial (e)" },
 ];
+
+interface SettingConfig {
+	label: string;
+	tooltip?: string;
+}
+
+// Translation-ready settings configuration
+// To add i18n support, replace string values with t("key") calls
+const SETTINGS_CONFIG: Record<string, SettingConfig> = {
+	"display.brightness": {
+		label: "Display Brightness",
+		tooltip: "Set display brightness level (1-16)",
+	},
+	"wifi.ssid": {
+		label: "WiFi Network",
+		tooltip: "The name of your WiFi network",
+	},
+	"wifi.password": {
+		label: "WiFi Password",
+	},
+	"weather.units": {
+		label: "Weather Units",
+		tooltip: "Choose between metric (Celsius) or imperial (Fahrenheit)",
+	},
+	"weather.geocode": {
+		label: "Location",
+		tooltip: "Geographic coordinates for weather data",
+	},
+	"datetime.timezone": {
+		label: "Timezone",
+		tooltip: "Your local timezone for date and time display",
+	},
+	"finance.symbols": {
+		label: "Stock Symbols",
+		tooltip: "Enter stock ticker symbols. Find symbols on Yahoo Finance.",
+	},
+	"weather.apikey": {
+		label: "Weather API Key",
+		tooltip: "API key for accessing weather data services",
+	},
+	"request.user_agent": {
+		label: "User Agent",
+		tooltip: "Custom User-Agent string for HTTP requests",
+	},
+	"datetime.ntp_servers": {
+		label: "NTP Servers",
+		tooltip: "Network Time Protocol servers for time synchronization",
+	}
+};
+
+function SettingLabel({ settingKey }: { settingKey: string }) {
+	const config = SETTINGS_CONFIG[settingKey];
+	const label = config?.label ?? settingKey;
+	const tooltip = config?.tooltip;
+
+	if (!tooltip) {
+		return <>{label}</>;
+	}
+
+	return (
+		<Group gap={4}>
+			<Text size="sm" fw={500}>{label}</Text>
+			<Popover width={250} position="top" withArrow shadow="md" zIndex={1000}>
+				<Popover.Target>
+					<Text component="span" size="xs" c="dimmed" style={{ cursor: "help" }}>[?]</Text>
+				</Popover.Target>
+				<Popover.Dropdown>
+					<Text size="xs">{tooltip}</Text>
+				</Popover.Dropdown>
+			</Popover>
+		</Group>
+	);
+}
+
+interface SettingsTabsProps {
+	settingsKeys: string[];
+	settingsValues: Record<string, string>;
+	onUpdateSettingValue: (key: string, value: string) => void;
+	disabled: boolean;
+}
+
+function SettingsTabs({ settingsKeys, settingsValues, onUpdateSettingValue, disabled }: SettingsTabsProps) {
+	const weatherKeys = settingsKeys.filter((k) => k.startsWith("weather."));
+	const financeKeys = settingsKeys.filter((k) => k.startsWith("finance."));
+	const generalKeys = settingsKeys.filter((k) => !k.startsWith("weather.") && !k.startsWith("finance."));
+
+	const renderSetting = (key: string) => {
+		const value = settingsValues[key] ?? "";
+
+		if (key === "display.brightness") {
+			const numValue = value === "" ? "" : Number(value);
+			return (
+				<NumberInput
+					key={key}
+					label={<SettingLabel settingKey={key} />}
+					value={Number.isNaN(numValue) ? "" : numValue}
+					onChange={(val: string | number) => onUpdateSettingValue(key, String(val))}
+					min={1}
+					max={16}
+					disabled={disabled}
+				/>
+			);
+		}
+
+		if (key === "wifi.password") {
+			return (
+				<PasswordInput
+					key={key}
+					label={<SettingLabel settingKey={key} />}
+					value={value}
+					onChange={(e: { currentTarget: HTMLInputElement }) =>
+						onUpdateSettingValue(key, e.currentTarget.value)
+					}
+					disabled={disabled}
+				/>
+			);
+		}
+
+		if (key === "weather.units") {
+			return (
+				<Select
+					key={key}
+					label={<SettingLabel settingKey={key} />}
+					value={value || null}
+					onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
+					data={WEATHER_UNIT_OPTIONS}
+					disabled={disabled}
+				/>
+			);
+		}
+
+		if (key === "datetime.timezone") {
+			return (
+				<Select
+					key={key}
+					label={<SettingLabel settingKey={key} />}
+					value={value || "Europe/Tallinn"}
+					onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
+					data={TIMEZONE_OPTIONS}
+					searchable
+					disabled={disabled}
+				/>
+			);
+		}
+
+		if (key === "weather.geocode") {
+			return (
+				<GeoCoordinatePicker
+					key={key}
+					label={<SettingLabel settingKey={key} />}
+					value={value}
+					onChange={(val: string) => onUpdateSettingValue(key, val)}
+					disabled={disabled}
+				/>
+			);
+		}
+
+		if (key === "finance.symbols") {
+			const tagsValue = value ? value.split(",").filter(Boolean) : [];
+			return (
+				<TagsInput
+					key={key}
+					label={<SettingLabel settingKey={key} />}
+					value={tagsValue}
+					onChange={(tags: string[]) => onUpdateSettingValue(key, tags.join(","))}
+					disabled={disabled}
+				/>
+			);
+		}
+
+		return (
+			<TextInput
+				key={key}
+				label={<SettingLabel settingKey={key} />}
+				value={value}
+				onChange={(e: { currentTarget: HTMLInputElement }) =>
+					onUpdateSettingValue(key, e.currentTarget.value)
+				}
+				disabled={disabled}
+			/>
+		);
+	};
+
+	const defaultTab = generalKeys.length > 0 ? "general" : weatherKeys.length > 0 ? "weather" : "finance";
+
+	return (
+		<Tabs defaultValue={defaultTab}>
+			<Tabs.List>
+				{generalKeys.length > 0 && <Tabs.Tab value="general">General</Tabs.Tab>}
+				{weatherKeys.length > 0 && <Tabs.Tab value="weather">Weather</Tabs.Tab>}
+				{financeKeys.length > 0 && <Tabs.Tab value="finance">Finance</Tabs.Tab>}
+			</Tabs.List>
+
+			{generalKeys.length > 0 && (
+				<Tabs.Panel value="general" pt="md">
+					<Stack gap="sm">
+						{generalKeys.map(renderSetting)}
+					</Stack>
+				</Tabs.Panel>
+			)}
+
+			{weatherKeys.length > 0 && (
+				<Tabs.Panel value="weather" pt="md">
+					<Stack gap="sm">
+						{weatherKeys.map(renderSetting)}
+					</Stack>
+				</Tabs.Panel>
+			)}
+
+			{financeKeys.length > 0 && (
+				<Tabs.Panel value="finance" pt="md">
+					<Stack gap="sm">
+						{financeKeys.map(renderSetting)}
+					</Stack>
+				</Tabs.Panel>
+			)}
+		</Tabs>
+	);
+}
 
 interface Props {
 	preferences: string;
@@ -94,121 +313,12 @@ export function PreferencesPanel({
 					</>
 				) : settingsKeys.length > 0 ? (
 					<>
-						<Stack gap="sm">
-							{settingsKeys.map((key) => {
-								const value = settingsValues[key] ?? "";
-
-								if (key === "display.brightness") {
-									const numValue = value === "" ? "" : Number(value);
-									return (
-										<NumberInput
-											key={key}
-											label={key}
-											value={Number.isNaN(numValue) ? "" : numValue}
-											onChange={(val: string | number) => onUpdateSettingValue(key, String(val))}
-											min={1}
-											max={16}
-											disabled={isBusy}
-										/>
-									);
-								}
-
-								if (key === "wifi.password") {
-									return (
-										<PasswordInput
-											key={key}
-											label={key}
-											value={value}
-											onChange={(e: { currentTarget: HTMLInputElement }) =>
-												onUpdateSettingValue(key, e.currentTarget.value)
-											}
-											disabled={isBusy}
-										/>
-									);
-								}
-
-								if (key === "weather.units") {
-									return (
-										<Select
-											key={key}
-											label={key}
-											value={value || null}
-											onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
-											data={WEATHER_UNIT_OPTIONS}
-											disabled={isBusy}
-										/>
-									);
-								}
-
-								if (key === "datetime.timezone") {
-									return (
-										<Select
-											key={key}
-											label={key}
-											value={value || "Europe/Tallinn"}
-											onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "")}
-											data={TIMEZONE_OPTIONS}
-											searchable
-											disabled={isBusy}
-										/>
-									);
-								}
-
-								if (key === "weather.geocode") {
-									return (
-										<GeoCoordinatePicker
-											key={key}
-											label={key}
-											value={value}
-											onChange={(val: string) => onUpdateSettingValue(key, val)}
-											disabled={isBusy}
-										/>
-									);
-								}
-
-								if (key === "finance.symbols") {
-									const tagsValue = value ? value.split(",").filter(Boolean) : [];
-									return (
-										<TagsInput
-											key={key}
-											label={
-												<Group gap={4}>
-													<Text size="sm" fw={500}>Symbols</Text>
-													<Popover width={250} position="top" withArrow shadow="md">
-														<Popover.Target>
-															<Text size="xs" c="dimmed" style={{ cursor: "help" }}>[i]</Text>
-														</Popover.Target>
-														<Popover.Dropdown>
-															<Text size="xs">
-																Enter stock ticker symbols.{" "}
-																<Anchor href="https://finance.yahoo.com/lookup" target="_blank" rel="noopener noreferrer" size="xs">
-																	Find symbols on Yahoo Finance
-																</Anchor>
-															</Text>
-														</Popover.Dropdown>
-													</Popover>
-												</Group>
-											}
-											value={tagsValue}
-											onChange={(tags: string[]) => onUpdateSettingValue(key, tags.join(","))}
-											disabled={isBusy}
-										/>
-									);
-								}
-
-								return (
-									<TextInput
-										key={key}
-										label={key}
-										value={value}
-										onChange={(e: { currentTarget: HTMLInputElement }) =>
-											onUpdateSettingValue(key, e.currentTarget.value)
-										}
-										disabled={isBusy}
-									/>
-								);
-							})}
-						</Stack>
+						<SettingsTabs
+							settingsKeys={settingsKeys}
+							settingsValues={settingsValues}
+							onUpdateSettingValue={onUpdateSettingValue}
+							disabled={isBusy}
+						/>
 						<Button
 							onClick={onSaveSettingsValues}
 							disabled={isBusy}
