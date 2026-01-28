@@ -50,6 +50,10 @@ const SETTINGS_TRANSLATION_KEYS: Record<string, SettingTranslationKeys> = {
 	"datetime.ntp_servers": {
 		labelKey: "settings.ntpServers",
 		tooltipKey: "settings.ntpServersTooltip",
+	},
+	"display.rotation": {
+		labelKey: "settings.displayRotation",
+		tooltipKey: "settings.displayRotationTooltip",
 	}
 };
 
@@ -95,6 +99,13 @@ function SettingsTabs({ t, settingsKeys, settingsValues, onUpdateSettingValue, d
 		{ value: "e", label: t("weatherUnitsImperial") },
 	];
 
+	const displayRotationOptions = [
+		{ value: "0", label: t("displayRotationLandscape") },
+		{ value: "1", label: t("displayRotationPortrait90") },
+		{ value: "2", label: t("displayRotationLandscape180") },
+		{ value: "3", label: t("displayRotationPortrait270") },
+	];
+
 	const renderSetting = (key: string) => {
 		const value = settingsValues[key] ?? "";
 
@@ -108,6 +119,19 @@ function SettingsTabs({ t, settingsKeys, settingsValues, onUpdateSettingValue, d
 					onChange={(val: string | number) => onUpdateSettingValue(key, String(val))}
 					min={1}
 					max={16}
+					disabled={disabled}
+				/>
+			);
+		}
+
+		if (key === "display.rotation") {
+			return (
+				<Select
+					key={key}
+					label={<SettingLabel settingKey={key} t={t} />}
+					value={value || "0"}
+					onChange={(val: string | null) => onUpdateSettingValue(key, val ?? "0")}
+					data={displayRotationOptions}
 					disabled={disabled}
 				/>
 			);
