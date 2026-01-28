@@ -44,7 +44,13 @@
       "ntpServers": "NTP Servers",
       "ntpServersTooltip": "Network Time Protocol servers for time synchronization",
       "displayRotation": "Display Rotation",
-      "displayRotationTooltip": "Screen orientation (0=landscape, 1=portrait 90° CW, 2=landscape 180°, 3=portrait 270° CW)"
+      "displayRotationTooltip": "Screen orientation (0=landscape, 1=portrait 90° CW, 2=landscape 180°, 3=portrait 270° CW)",
+      "displayColor": "Display Text Color",
+      "displayBackground": "Display Background Color",
+      "weatherColor": "Weather Text Color",
+      "weatherBackground": "Weather Background Color",
+      "financeColor": "Finance Text Color",
+      "financeBackground": "Finance Background Color"
     },
     "weatherUnitsMetric": "Metric (m)",
     "weatherUnitsImperial": "Imperial (e)",
@@ -108,7 +114,13 @@
       "ntpServers": "Servidores NTP",
       "ntpServersTooltip": "Servidores de protocolo de tiempo de red para sincronización",
       "displayRotation": "Rotación de pantalla",
-      "displayRotationTooltip": "Orientación de pantalla (0=horizontal, 1=vertical 90° CW, 2=horizontal 180°, 3=vertical 270° CW)"
+      "displayRotationTooltip": "Orientación de pantalla (0=horizontal, 1=vertical 90° CW, 2=horizontal 180°, 3=vertical 270° CW)",
+      "displayColor": "Color del texto de pantalla",
+      "displayBackground": "Color de fondo de pantalla",
+      "weatherColor": "Color del texto del clima",
+      "weatherBackground": "Color de fondo del clima",
+      "financeColor": "Color del texto de finanzas",
+      "financeBackground": "Color de fondo de finanzas"
     },
     "weatherUnitsMetric": "Métrico (m)",
     "weatherUnitsImperial": "Imperial (e)",
@@ -172,7 +184,13 @@
       "ntpServers": "NTP serverid",
       "ntpServersTooltip": "Võrguaja protokolli serverid aja sünkroniseerimiseks",
       "displayRotation": "Ekraani pööramine",
-      "displayRotationTooltip": "Ekraani suund (0=horisontaalne, 1=vertikaalne 90° CW, 2=horisontaalne 180°, 3=vertikaalne 270° CW)"
+      "displayRotationTooltip": "Ekraani suund (0=horisontaalne, 1=vertikaalne 90° CW, 2=horisontaalne 180°, 3=vertikaalne 270° CW)",
+      "displayColor": "Ekraani teksti värv",
+      "displayBackground": "Ekraani taustavärv",
+      "weatherColor": "Ilma teksti värv",
+      "weatherBackground": "Ilma taustavärv",
+      "financeColor": "Rahanduse teksti värv",
+      "financeBackground": "Rahanduse taustavärv"
     },
     "weatherUnitsMetric": "Meetriline (m)",
     "weatherUnitsImperial": "Keiserlik (e)",
@@ -236,7 +254,13 @@
       "ntpServers": "NTP серверы",
       "ntpServersTooltip": "Серверы сетевого времени для синхронизации",
       "displayRotation": "Поворот дисплея",
-      "displayRotationTooltip": "Ориентация экрана (0=горизонтально, 1=вертикально 90° CW, 2=горизонтально 180°, 3=вертикально 270° CW)"
+      "displayRotationTooltip": "Ориентация экрана (0=горизонтально, 1=вертикально 90° CW, 2=горизонтально 180°, 3=вертикально 270° CW)",
+      "displayColor": "Цвет текста дисплея",
+      "displayBackground": "Цвет фона дисплея",
+      "weatherColor": "Цвет текста погоды",
+      "weatherBackground": "Цвет фона погоды",
+      "financeColor": "Цвет текста финансов",
+      "financeBackground": "Цвет фона финансов"
     },
     "weatherUnitsMetric": "Метрическая (m)",
     "weatherUnitsImperial": "Имперская (e)",

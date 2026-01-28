@@ -1,4 +1,4 @@
-import { Button, Card, Group, NumberInput, PasswordInput, Popover, Select, Stack, Switch, Tabs, TagsInput, Text, TextInput, Textarea, Title } from "@mantine/core";
+import { Button, Card, ColorPicker, ColorSwatch, Group, NumberInput, PasswordInput, Popover, Select, Stack, Switch, Tabs, TagsInput, Text, TextInput, Textarea, Title } from "@mantine/core";
 import { useState } from "preact/hooks";
 import timezones from "../data/zones.json";
 import type { TranslationFunction } from "../hooks";
@@ -54,7 +54,25 @@ const SETTINGS_TRANSLATION_KEYS: Record<string, SettingTranslationKeys> = {
 	"display.rotation": {
 		labelKey: "settings.displayRotation",
 		tooltipKey: "settings.displayRotationTooltip",
-	}
+	},
+	"display.color": {
+		labelKey: "settings.displayColor",
+	},
+	"display.background": {
+		labelKey: "settings.displayBackground",
+	},
+	"weather.color": {
+		labelKey: "settings.weatherColor",
+	},
+	"weather.background": {
+		labelKey: "settings.weatherBackground",
+	},
+	"finance.color": {
+		labelKey: "settings.financeColor",
+	},
+	"finance.background": {
+		labelKey: "settings.financeBackground",
+	},
 };
 
 function SettingLabel({ settingKey, t }: { settingKey: string; t: TranslationFunction }) {
@@ -200,6 +218,31 @@ function SettingsTabs({ t, settingsKeys, settingsValues, onUpdateSettingValue, d
 					onChange={(tags: string[]) => onUpdateSettingValue(key, tags.join(","))}
 					disabled={disabled}
 				/>
+			);
+		}
+
+		if (key.endsWith(".color") || key.endsWith(".background")) {
+			const colorValue = value ? (value.startsWith("#") ? value : `#${value}`) : '';
+			return (
+				<Popover key={key} position="bottom-start" withArrow shadow="md">
+					<Popover.Target>
+						<TextInput
+							label={<SettingLabel settingKey={key} t={t} />}
+							value={value}
+							onChange={(e: { currentTarget: HTMLInputElement }) =>
+								onUpdateSettingValue(key, e.currentTarget.value)
+							}
+							disabled={disabled}
+							leftSection={<ColorSwatch color={colorValue} size={18} />}
+						/>
+					</Popover.Target>
+					<Popover.Dropdown>
+						<ColorPicker
+							value={colorValue}
+							onChange={(color: string) => onUpdateSettingValue(key, color.replace(/^#/, ""))}
+						/>
+					</Popover.Dropdown>
+				</Popover>
 			);
 		}
 
