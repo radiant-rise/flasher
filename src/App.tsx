@@ -1,4 +1,5 @@
 import { Container, Group, Stack, Title } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { useCallback, useState } from "preact/hooks";
 import {
 	AlertMessage,
@@ -45,6 +46,26 @@ export function App() {
 		[],
 	);
 
+	const confirmAndRun = useCallback(
+		(
+			title: string,
+			message: string,
+			fn: () => Promise<unknown>,
+			errorContext: string,
+			successMsg?: string,
+			destructive?: boolean,
+		) => {
+			modals.openConfirmModal({
+				title,
+				children: message,
+				labels: { confirm: t("confirm"), cancel: t("cancel") },
+				confirmProps: destructive ? { color: "red" } : undefined,
+				onConfirm: () => runAsync(fn, errorContext, successMsg),
+			});
+		},
+		[runAsync, t],
+	);
+
 	const handleDisconnect = useCallback(async () => {
 		await serial.disconnect();
 		prefs.setPreferences("");
@@ -55,12 +76,14 @@ export function App() {
 			setAlert("No firmware loaded. Select a version first.");
 			return;
 		}
-		runAsync(
+		confirmAndRun(
+			t("confirmProgramTitle"),
+			t("confirmProgramMessage"),
 			() => flash.programFlash(firmware.firmwareData!, firmware.flashAddress),
 			"Programming failed",
 			"Programming completed successfully!",
 		);
-	}, [firmware.firmwareData, firmware.flashAddress, flash, runAsync]);
+	}, [firmware.firmwareData, firmware.flashAddress, flash, confirmAndRun, t]);
 
 	const isBusy = flash.isErasing || flash.isProgramming;
 
@@ -89,8 +112,17 @@ export function App() {
 						}, "Connection failed")
 					}
 					onDisconnect={() => runAsync(handleDisconnect, "Disconnect failed")}
-					onErase={() => runAsync(() => flash.eraseFlash(), "Erase failed")}
-					isErasing={flash.isErasing}
+					onErase={() =>
+					confirmAndRun(
+						t("confirmEraseTitle"),
+						t("confirmEraseMessage"),
+						() => flash.eraseFlash(),
+						"Erase failed",
+						undefined,
+						true,
+					)
+				}
+				isErasing={flash.isErasing}
 				/>
 
 				<AlertMessage message={alert} onDismiss={() => setAlert("")} />
@@ -128,7 +160,9 @@ export function App() {
 								runAsync(() => prefs.getAllSettingsKeys(), "Error getting settings keys")
 							}
 							onUpdateSettings={() =>
-								runAsync(
+								confirmAndRun(
+									t("confirmUpdateSettingsTitle"),
+									t("confirmUpdateSettingsMessage"),
 									() => prefs.updateAllSettings(),
 									"Error updating settings",
 									"Settings updated",
@@ -139,7 +173,13 @@ export function App() {
 							settingsValues={prefs.settingsValues}
 							onUpdateSettingValue={prefs.updateSettingValue}
 							onSaveSettingsValues={() =>
-								runAsync(() => prefs.saveSettingsValues(), "Error saving settings", "Settings saved")
+								confirmAndRun(
+									t("confirmSaveSettingsTitle"),
+									t("confirmSaveSettingsMessage"),
+									() => prefs.saveSettingsValues(),
+									"Error saving settings",
+									"Settings saved",
+								)
 							}
 						/>
 					</>

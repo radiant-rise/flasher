@@ -45,7 +45,17 @@
       "ntpServersTooltip": "Network Time Protocol servers for time synchronization"
     },
     "weatherUnitsMetric": "Metric (m)",
-    "weatherUnitsImperial": "Imperial (e)"
+    "weatherUnitsImperial": "Imperial (e)",
+    "confirm": "Yes",
+    "cancel": "No",
+    "confirmEraseTitle": "Erase Flash",
+    "confirmEraseMessage": "This will erase all data on the device. Are you sure you want to continue?",
+    "confirmProgramTitle": "Program Firmware",
+    "confirmProgramMessage": "This will write new firmware to the device. Are you sure you want to continue?",
+    "confirmUpdateSettingsTitle": "Update Settings",
+    "confirmUpdateSettingsMessage": "This will update device settings. Are you sure you want to continue?",
+    "confirmSaveSettingsTitle": "Save Settings",
+    "confirmSaveSettingsMessage": "This will save settings to the device. Are you sure you want to continue?"
   },
   "ES": {
     "title": "Flasher",
@@ -93,7 +103,17 @@
       "ntpServersTooltip": "Servidores de protocolo de tiempo de red para sincronización"
     },
     "weatherUnitsMetric": "Métrico (m)",
-    "weatherUnitsImperial": "Imperial (e)"
+    "weatherUnitsImperial": "Imperial (e)",
+    "confirm": "Sí",
+    "cancel": "No",
+    "confirmEraseTitle": "Borrar Flash",
+    "confirmEraseMessage": "Esto borrará todos los datos del dispositivo. ¿Está seguro de que desea continuar?",
+    "confirmProgramTitle": "Programar Firmware",
+    "confirmProgramMessage": "Esto escribirá nuevo firmware en el dispositivo. ¿Está seguro de que desea continuar?",
+    "confirmUpdateSettingsTitle": "Actualizar Ajustes",
+    "confirmUpdateSettingsMessage": "Esto actualizará los ajustes del dispositivo. ¿Está seguro de que desea continuar?",
+    "confirmSaveSettingsTitle": "Guardar Ajustes",
+    "confirmSaveSettingsMessage": "Esto guardará los ajustes en el dispositivo. ¿Está seguro de que desea continuar?"
   },
   "EE": {
     "title": "Flasher",
@@ -141,7 +161,17 @@
       "ntpServersTooltip": "Võrguaja protokolli serverid aja sünkroniseerimiseks"
     },
     "weatherUnitsMetric": "Meetriline (m)",
-    "weatherUnitsImperial": "Keiserlik (e)"
+    "weatherUnitsImperial": "Keiserlik (e)",
+    "confirm": "Jah",
+    "cancel": "Ei",
+    "confirmEraseTitle": "Kustuta Flash",
+    "confirmEraseMessage": "See kustutab kõik andmed seadmelt. Kas olete kindel, et soovite jätkata?",
+    "confirmProgramTitle": "Programmeeri püsivara",
+    "confirmProgramMessage": "See kirjutab seadmele uue püsivara. Kas olete kindel, et soovite jätkata?",
+    "confirmUpdateSettingsTitle": "Uuenda seadeid",
+    "confirmUpdateSettingsMessage": "See uuendab seadme seadeid. Kas olete kindel, et soovite jätkata?",
+    "confirmSaveSettingsTitle": "Salvesta seaded",
+    "confirmSaveSettingsMessage": "See salvestab seaded seadmele. Kas olete kindel, et soovite jätkata?"
   },
   "RU": {
     "title": "Flasher",
@@ -189,6 +219,16 @@
       "ntpServersTooltip": "Серверы сетевого времени для синхронизации"
     },
     "weatherUnitsMetric": "Метрическая (m)",
-    "weatherUnitsImperial": "Имперская (e)"
+    "weatherUnitsImperial": "Имперская (e)",
+    "confirm": "Да",
+    "cancel": "Нет",
+    "confirmEraseTitle": "Стереть Flash",
+    "confirmEraseMessage": "Это удалит все данные с устройства. Вы уверены, что хотите продолжить?",
+    "confirmProgramTitle": "Прошить устройство",
+    "confirmProgramMessage": "Это запишет новую прошивку на устройство. Вы уверены, что хотите продолжить?",
+    "confirmUpdateSettingsTitle": "Обновить настройки",
+    "confirmUpdateSettingsMessage": "Это обновит настройки устройства. Вы уверены, что хотите продолжить?",
+    "confirmSaveSettingsTitle": "Сохранить настройки",
+    "confirmSaveSettingsMessage": "Это сохранит настройки на устройство. Вы уверены, что хотите продолжить?"
   }
 }
