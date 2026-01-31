@@ -73,6 +73,10 @@ const SETTINGS_TRANSLATION_KEYS: Record<string, SettingTranslationKeys> = {
 	"finance.background": {
 		labelKey: "settings.financeBackground",
 	},
+	"system.sleep_duration": {
+		labelKey: "settings.sleepDuration",
+		tooltipKey: "settings.sleepDurationTooltip",
+	},
 };
 
 function SettingLabel({ settingKey, t }: { settingKey: string; t: TranslationFunction }) {
@@ -137,6 +141,20 @@ function SettingsTabs({ t, settingsKeys, settingsValues, onUpdateSettingValue, d
 					onChange={(val: string | number) => onUpdateSettingValue(key, String(val))}
 					min={1}
 					max={16}
+					disabled={disabled}
+				/>
+			);
+		}
+
+		if (key === "system.sleep_duration") {
+			const numValue = value === "" ? "" : Number(value);
+			return (
+				<NumberInput
+					key={key}
+					label={<SettingLabel settingKey={key} t={t} />}
+					value={Number.isNaN(numValue) ? "" : numValue}
+					onChange={(val: string | number) => onUpdateSettingValue(key, String(val))}
+					min={1}
 					disabled={disabled}
 				/>
 			);

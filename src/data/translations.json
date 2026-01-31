@@ -50,7 +50,9 @@
       "weatherColor": "Weather Text Color",
       "weatherBackground": "Weather Background Color",
       "financeColor": "Finance Text Color",
-      "financeBackground": "Finance Background Color"
+      "financeBackground": "Finance Background Color",
+      "sleepDuration": "Sleep Duration",
+      "sleepDurationTooltip": "Time in minutes before the device enters deep sleep mode"
     },
     "weatherUnitsMetric": "Metric (m)",
     "weatherUnitsImperial": "Imperial (e)",
@@ -120,7 +122,9 @@
       "weatherColor": "Color del texto del clima",
       "weatherBackground": "Color de fondo del clima",
       "financeColor": "Color del texto de finanzas",
-      "financeBackground": "Color de fondo de finanzas"
+      "financeBackground": "Color de fondo de finanzas",
+      "sleepDuration": "Duración del sueño",
+      "sleepDurationTooltip": "Tiempo en minutos antes de que el dispositivo entre en modo de sueño profundo"
     },
     "weatherUnitsMetric": "Métrico (m)",
     "weatherUnitsImperial": "Imperial (e)",
@@ -190,7 +194,9 @@
       "weatherColor": "Ilma teksti värv",
       "weatherBackground": "Ilma taustavärv",
       "financeColor": "Rahanduse teksti värv",
-      "financeBackground": "Rahanduse taustavärv"
+      "financeBackground": "Rahanduse taustavärv",
+      "sleepDuration": "Uneaeg",
+      "sleepDurationTooltip": "Aeg minutites enne seadme sügavasse unerežiimi minekut"
     },
     "weatherUnitsMetric": "Meetriline (m)",
     "weatherUnitsImperial": "Keiserlik (e)",
@@ -260,7 +266,9 @@
       "weatherColor": "Цвет текста погоды",
       "weatherBackground": "Цвет фона погоды",
       "financeColor": "Цвет текста финансов",
-      "financeBackground": "Цвет фона финансов"
+      "financeBackground": "Цвет фона финансов",
+      "sleepDuration": "Время сна",
+      "sleepDurationTooltip": "Время в минутах до перехода устройства в режим глубокого сна"
     },
     "weatherUnitsMetric": "Метрическая (m)",
     "weatherUnitsImperial": "Имперская (e)",
